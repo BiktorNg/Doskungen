@@ -2240,7 +2240,7 @@ function updatePolice(dt){
   else if(POL.search&&POL.search.c===c){}
   else{wStep(c.w,dt,curfew?3.1:2.5);c.x=c.w.x;c.z=c.w.z;c.dir=c.w.dir;c.speed=c.w.speed}});
  POL.anySee=anySee;
- if(POL.W===0&&!POL.search&&!inCar){for(const c of COPS){if(c.temp||c.ko||c.koNet||c.ignore>0)continue;const d=Math.hypot(c.x-P.x,c.z-P.z);if(curfew&&!insideAny()&&d<(P.crouch?9:16)&&copSees(c,16)){setWanted(1,'Polisen såg dig ute under utegångsförbudet!');floatText(c.x,2.6,c.z,'Stanna! Utegångsförbud!','#6ec6ff');break}if(d<4.5&&copSees(c,6)&&!insideAny()&&!POL.arrest&&rand()<dt*(carrying?.07:.025)*(curfew?2:1)*doseMul('search')){searchStart(c);break}}}
+ if(POL.W===0&&!POL.search&&!inCar){for(const c of COPS){if(c.temp||c.ko||c.koNet||c.ignore>0)continue;const d=Math.hypot(c.x-P.x,c.z-P.z);if(curfew&&!insideAny()&&d<(P.crouch?9:16)&&copSees(c,16)){if(curfewSeen(c))break}if(d<4.5&&copSees(c,6)&&!insideAny()&&!POL.arrest&&rand()<dt*(carrying?.07:.025)*(curfew?2:1)*doseMul('search')){searchStart(c);break}}}
  if(POL.search){const s=POL.search,c=s.c,d=Math.hypot(c.x-P.x,c.z-P.z);s.t+=dt;
   if(POL.W>0){POL.search=null;$('#search').hidden=true}
   else if(s.stage==='walk'){const dx=P.x-c.x,dz=P.z-c.z;if(d>1.7){c.x+=dx/d*3.4*dt;c.z+=dz/d*3.4*dt;pushOut(c,.38);c.dir=Math.atan2(dx,dz);c.speed=3.4}else searchBegin();if(POL.search&&POL.search.stage==='walk'&&(d>18||s.t>12)){POL.search=null;c.ignore=30}}
@@ -4667,5 +4667,32 @@ mpStart=async function(host,code){PEERLIB.host=!!host;const r=await peerStartBas
 /* explain the code-only flow where there is no shared lobby list */
 const peerMenuHTML=menuLobbyHTML;
 menuLobbyHTML=function(){let h=peerMenuHTML();if(MP.offline)h=h.replace(/<p style="margin:10px 0 4px"><b>Öppna lobbyer<\/b><\/p><div class="lobs">[\s\S]*?<\/div>\s*<div class="row"><input id="mmCode"/,'<p class="sub" style="margin:10px 0 4px">Värden får en kod på fyra tecken. Skriv in den här för att gå med (kräver internet).</p><div class="row"><input id="mmCode"');return h};
+
+/* ---------- Police fairness ----------
+   1) Traffic accidents: AI cars that hit people no longer count as YOUR assault (only the car you drive,
+      or just abandoned while it is still rolling, is on you).
+   2) Curfew 21–05 is now announced: a warning before it starts, a badge while you are outside,
+      and the first sighting each night is a spoken warning instead of an instant chase. */
+let lastDriveExit=-1e9;
+const polExitBase=exitCar;exitCar=function(){lastDriveExit=performance.now();return polExitBase.apply(this,arguments)};
+function playerDrives(b){return b===S.car&&(inCar||performance.now()-lastDriveExit<3000)}
+const polCollideBase=collideVehicleCharacters;
+collideVehicleCharacters=function(b){if(playerDrives(b))return polCollideBase(b);if(b.y>1.7)return;const speed=Math.hypot(b.vx,b.vz);
+ for(const t of hitTargets()){const e=t.e;if(t.kind==='mp'||e.seated||e.ko||e.koNet)continue;const p=t.kind==='c'?e:e.w,h=carCircleContact(p,.32,b);if(!h)continue;const towards=b.vx*h.nx+b.vz*h.nz;
+  if(speed>2.3&&towards>.4&&(VEHICLE_HITS.get(e)||0)<=physicsClock){VEHICLE_HITS.set(e,physicsClock+1);
+   /* an accident: the person is knocked down, nobody calls the police on you */
+   if(speed>5){try{e.ko={t:t.kind==='c'?60:45};if(t.kind==='c'){interruptGrab(e);e.chase=false;e.speed=0}else e.w.speed=0;e.cb=null;e.looted=false;e.hp=0;launchRagdoll(t,b.vx*.72,b.vz*.72,clamp(speed*.25,2,8))}catch(err){}}else{p.x+=h.nx*h.depth;p.z+=h.nz*h.depth;pushOut(p,.32);if(e.ch)react(e.ch,'angry',1)}
+   b.vx*=.6;b.vz*=.6;if(b.driver&&b.driver.seated){b.aiRecover=2;b.targetSpeed=0}}
+  else{p.x+=h.nx*h.depth;p.z+=h.nz*h.depth;pushOut(p,.32)}}};
+function curfewSeen(c){const T=abs();
+ if(!POL.cfWarn||T-POL.cfWarn>90){POL.cfWarn=T;floatText(c.x,2.6,c.z,'Utegångsförbud! Gå hem!','#6ec6ff');sfx('whistle');toast('En polis såg dig ute under utegångsförbudet (21–05). Gå inomhus eller ur sikte – nästa gång blir du efterlyst.','bad');return true}
+ if(T-POL.cfWarn>=10){setWanted(1,'Polisen såg dig ute under utegångsförbudet igen!');floatText(c.x,2.6,c.z,'Stanna! Utegångsförbud!','#6ec6ff');return true}
+ return false}
+let cfDay=-1,cfSig='';
+function curfewTick(){if(!S)return;const el=$('#cfBadge');const m=S.min;
+ if(m>=1230&&m<1260&&cfDay!==S.day&&running()){cfDay=S.day;toast('Utegångsförbud från 21:00 till 05:00. Polisen griper den som är ute – var inomhus eller håll dig undan.','bad')}
+ const curfew=m>=1260||m<300,show=curfew&&running()&&!INTRO&&!insideAny()&&!HIDDEN;const sig=show+'|'+(POL.W>0);if(el&&sig!==cfSig){cfSig=sig;el.hidden=!show||POL.W>0}}
+const polCamBase=placeCamera;placeCamera=function(dt){polCamBase(dt);try{curfewTick()}catch(e){reportErr(e)}};
+(function cfDom(){try{const st=document.createElement('style');st.textContent=`#cfBadge{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 132px);transform:translateX(-50%);background:rgba(20,23,36,.8);border:1px solid #6ec6ff;color:#cfe8ff;border-radius:999px;padding:4px 14px;font-size:12px;font-weight:800;pointer-events:none;z-index:4;white-space:nowrap}`;document.head.appendChild(st);const b=document.createElement('div');b.id='cfBadge';b.hidden=true;b.textContent='Utegångsförbud 21–05 · polisen griper dig om de ser dig';($('#app')||document.body).appendChild(b)}catch(e){}})();
 </script>
 </body></html>
