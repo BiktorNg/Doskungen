@@ -765,8 +765,8 @@ const DOOR_N={odlar:'Odlarboden',jarn:'Järnhandeln',kiosk:'Kiosken',tvatt:'Tvä
 function buildWorld(){
  const R=srng(7);
  INST.pine=[];const ground=new THREE.Mesh(new THREE.PlaneGeometry(400,360),TM('grass',110,98,0xffffff,.95));ground.rotation.x=-Math.PI/2;ground.position.set(15,0,100);ground.receiveShadow=true;scene.add(ground);
- const wm=new THREE.MeshStandardMaterial({color:0x4286ac,roughness:.68,metalness:.06,flatShading:true,vertexColors:true});wm.onBeforeCompile=sh=>{sh.uniforms.uTime=WIND;sh.vertexShader='uniform float uTime;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.z+=sin(position.x*.42+uTime*.6)*.23+cos(position.y*.37+uTime*.45)*.18;')};
- const water=new THREE.Mesh(polyWaterGeo(1200,1600,180,220),wm);water.rotation.x=-Math.PI/2;water.position.set(815,-.4,100);scene.add(water);WORLD.water=water;
+ const wm=new THREE.MeshStandardMaterial({color:0x465c59,roughness:.78,metalness:.06,flatShading:true,vertexColors:true});wm.onBeforeCompile=sh=>{sh.uniforms.uTime=WIND;sh.vertexShader='uniform float uTime;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.z+=sin(position.x*.42+uTime*.6)*.23+cos(position.y*.37+uTime*.45)*.18;')};
+ const water=new THREE.Mesh(polyWaterGeo(104,300,32,72),wm);water.rotation.x=-Math.PI/2;water.position.set(264,-.4,100);scene.add(water);WORLD.water=water;
  box(6,1.2,360,TM('concrete',2,60,0xb5b0a5),212,-.55,100);for(let z=-60;z<260;z+=6)cyl(.22,.25,1,10,0x333333,209.5,.5,z);
  [[-80,19.4],[24.6,93.4],[98.6,157.4],[162.6,280]].forEach(([a,b])=>addCol(214,a,240,b));addCol(240,-80,260,280);addCol(-260,-80,-172,280);addCol(-260,-80,280,-10);addCol(-260,210,280,280);
  WORLD.boats=[];[[225,60],[232,130],[222,180]].forEach(([x,z],k)=>{const b=new THREE.Group();rbox(3,1.1,8,.4,M([0xffffff,0xd62828,0x1d6fa5][k],{roughness:.4}),0,0,0,b);rbox(2,1.2,2.5,.15,M(0xf0f0f0),0,1,-.5,b);cyl(.06,.06,4,6,0xdddddd,0,2.5,1.5,b);b.position.set(x,0,z);scene.add(b);WORLD.boats.push(b)});
@@ -1016,10 +1016,7 @@ function finishInst(){
 function roofJunk(x1,z1,x2,z2,y,R){const n=1+Math.floor((x2-x1)/8);const mm=M(0xa9adb2,{metalness:.5,roughness:.45});for(let i=0;i<n;i++){const x=x1+2+R()*(x2-x1-4),z=z1+2+R()*(z2-z1-4);rbox(1.4,.9,1,.05,mm,x,y+.45,z);cyl(.32,.32,.06,16,M(0x55595f,{metalness:.6}),x,y+.93,z,scene,false);if(R()<.6)cyl(.12,.12,.9,8,mm,x+1.3,y+.45,z+.5)}}
 function buildScenery(R){
  const far=new THREE.Mesh(new THREE.PlaneGeometry(910,1600),M(0x5d7350,{roughness:1}));far.rotation.x=-Math.PI/2;far.position.set(-245,-.08,100);far.receiveShadow=false;scene.add(far);
- const mm=new THREE.MeshStandardMaterial({color:0x657c83,roughness:1,flatShading:false});
- for(let k=0;k<28;k++){const a=k/28*Math.PI*2+R()*.1,r=440+R()*60,h=100+R()*110;const m=new THREE.Mesh(mountainGeo(80+R()*60,h,5+Math.floor(R()*3)),mm);m.position.set(100+Math.cos(a)*r,-6,100+Math.sin(a)*r);m.rotation.y=R()*3;m.scale.z=.7+R()*.5;scene.add(m)}
- const hm=new THREE.MeshStandardMaterial({color:0x4c654d,roughness:1,flatShading:false});
- for(let k=0;k<34;k++){const a=k/34*Math.PI*2,r=300+R()*50;const m=new THREE.Mesh(new THREE.SphereGeometry(45+R()*35,20,12),hm);m.scale.y=.42;m.position.set(100+Math.cos(a)*r,-8,100+Math.sin(a)*r);scene.add(m)}
+ buildIndustrialRing(R);
  // elevated railway along z=150
  const conc=TM('concrete',60,1,0xb3b0aa,.9),steel=M(0x5a8064,{metalness:.4,roughness:.5});const Y=7.4,Z=150;
  box(380,1.1,8.6,conc,120,Y,Z);box(380,.15,8.6,M(0x7a776f),120,Y+.6,Z,scene,false);
@@ -1682,7 +1679,7 @@ function sleep(passedOut){
  debtCheck();rentCheck();S.nextOrder=Math.min(S.nextOrder,abs()+40);save()}
 function rentCheck(){const F=S.flags;if(!F.room)return;if(S.day===F.rentDue)chat('Gunilla (Motell Måsen)',`Påminnelse: hyran för rum 9 (${RENT} kr) ska betalas idag i receptionen.`);else if(S.day===F.rentDue+1)chat('Gunilla (Motell Måsen)','Hyran är inte betald. Rum 9 är låst tills du betalar i receptionen.')}
 function debtCheck(){const F=S.flags;if(MISSIONS[S.mission]&&MISSIONS[S.mission].id==='debt'&&!F.debtPaid&&S.day>F.debtDue){
- const lada=S.props.motel.st.find(s=>s&&s.type==='lada');let took=0;if(lada)lada.inv.forEach((x,i)=>{if(x&&(x.id.startsWith('P|')||x.id.startsWith('L|')||x.id==='cash')){took+=x.n;lada.inv[i]=null}});
+ const lada=S.props.motel.objs.find(s=>s&&s.type==='lada');let took=0;if(lada)lada.inv.forEach((x,i)=>{if(x&&(x.id.startsWith('P|')||x.id.startsWith('L|')||x.id==='cash')){took+=x.n;lada.inv[i]=null}});
  F.debt+=500;F.debtDue=S.day+2;chat(GUNNAR,`Du missade fredagen. Mina killar har varit i ditt rum${took?' och tog vad de hittade':''}. Nu är det ${F.debt} kr, senast ${dayName(F.debtDue)}.`)}}
 
 /* ---------- Car ---------- */
@@ -2703,7 +2700,7 @@ function collectBulletMeshes(root,out){root.traverse(o=>{if(!o.isMesh)return;for
  const mats=Array.isArray(o.material)?o.material:[o.material];if(mats.some(m=>m.isMeshStandardMaterial&&!m.transparent))out.push(o)})}
 function bulletSceneMeshesBase(){
  if(!GUN.blockers){GUN.blockers=[];collectBulletMeshes(scene,GUN.blockers)}
- const list=GUN.blockers.filter(o=>characterInScene(o)),seen=new Set(list);
+ const list=GUN.blockers.filter(o=>bulletInScene(o)),seen=new Set(list);
  for(const root of[CAR?.g,...PARKED_CARS.map(c=>c.car.g),...TRAF.filter(t=>!trafficUnavailable(t)).map(t=>t.car.g),...Object.values(VISO).map(o=>o.g)])if(root){const more=[];collectBulletMeshes(root,more);for(const m of more)if(!seen.has(m)){seen.add(m);list.push(m)}}
  return list;
 }
@@ -3169,7 +3166,7 @@ function update(dt){
  const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=Math.cos(cam.yaw),rz=-Math.sin(cam.yaw);
  let mf=(keys['w']||keys['arrowup']?1:0)-(keys['s']||keys['arrowdown']?1:0),ms=(keys['d']||keys['arrowright']?1:0)-(keys['a']||keys['arrowleft']?1:0);
  if(joy.x||joy.y){mf=-joy.y;ms=joy.x}if(uiOpen||busy||FOCUS||PP||POL.arrest||POL.stun>0||HIDDEN||ANSWER&&modalOpen()){mf=ms=0}
- P.crouch=!inCar&&keys['c']&&!POL.arrest;P.vy=(P.vy||0)-13*dt;P.y=Math.max(0,(P.y||0)+P.vy*dt);if(P.y<=0)P.vy=0;
+ if(inCar||POL.arrest)CROUCHT=false;P.crouch=!inCar&&CROUCHT&&!POL.arrest;P.vy=(P.vy||0)-13*dt;P.y=Math.max(0,(P.y||0)+P.vy*dt);if(P.y<=0)P.vy=0;
  if(inCar){DRIVE_INPUT.gas=mf;moveDrivenCar(dt,ms)}
  else{const l=Math.hypot(mf,ms);const run=(keys['shift']||touchRun)&&P.stam>3&&l>0&&!P.crouch;const sp=(P.crouch?1.7:run?6.5:3.6)*doseMul('spd');
   if(l>0){const vx=(fx*mf+rx*ms)/Math.max(1,l),vz=(fz*mf+rz*ms)/Math.max(1,l);const moved=movePlayer(vx*sp*dt*Math.min(1,l),vz*sp*dt*Math.min(1,l));P.speed=Math.min(sp*Math.min(1,l),moved/Math.max(dt,.001))}else P.speed=0;
@@ -3359,7 +3356,7 @@ function renderMenu(){const m=slotMeta(),L=latestSlot();const v=MENU.view;
   <label class="set"><span>Muskänslighet</span><input id="setS" type="range" min=".3" max="2.5" step=".1" value="${SET.sens}"></label>
   <label class="set"><span>Volym</span><input id="setV" type="range" min="0" max="1" step=".05" value="${SET.vol}"></label><label class="set"><span>Musik</span><input id="setM" type="range" min="0" max="1" step=".05" value="${SET.music==null?.5:SET.music}"></label>
   <label class="set"><span>Synfält</span><input id="setF" type="range" min="60" max="95" step="1" value="${SET.fov}"></label><p class="sub">Grafikändringar gäller efter att sidan laddats om.</p></div>`;
- if(v==='keys')panel=`<div class="mpanel"><h3>Kontroller</h3><div class="keys"><kbd>WASD</kbd><span>Gå · Shift springer · C/Ctrl hukar · Mellanslag hoppar</span><kbd>E</kbd><span>Använd / prata / plocka upp</span><kbd>Klick / Q</kbd><span>Skjut med valt vapen · annars slå (batong ger mer skada)</span><kbd>1–9</kbd><span>Välj föremål (eller scrolla)</span><kbd>Mus</kbd><span>I odlingsläge: håll för att hälla, klicka för att klippa, dra för att packa</span><kbd>A / D</kbd><span>Snurra plantan vid skörd</span><kbd>R</kbd><span>Ladda om vapen / vrid stationer</span><kbd>V / högerklick</kbd><span>Sniperns kikarsikte</span><kbd>B</kbd><span>Alla föremål och testverktyg i kreativt läge</span><kbd>E vid bil</kbd><span>Stjäl eller kör · tredjeperson i bilen · kliv ur när du bromsat</span><kbd>G</kbd><span>Plocka upp stationer</span><kbd>P / Tab</kbd><span>Mobilen</span><kbd>T</kbd><span>Chatt i co-op</span><kbd>E vid väns bil</kbd><span>Åk med som passagerare (co-op) · E kliver ur · skjut genom fönstret</span><kbd>Mellanslag i bil</kbd><span>Handbroms</span><kbd>F</kbd><span>Ficklampa</span><kbd>Esc</kbd><span>Paus / avbryt</span></div></div>`;
+ if(v==='keys')panel=`<div class="mpanel"><h3>Kontroller</h3><div class="keys"><kbd>WASD</kbd><span>Gå · Shift springer · C hukar (tryck av/på) · Mellanslag hoppar</span><kbd>E</kbd><span>Använd / prata / plocka upp</span><kbd>Klick / Q</kbd><span>Skjut med valt vapen · annars slå (batong ger mer skada)</span><kbd>1–9</kbd><span>Välj föremål (eller scrolla)</span><kbd>Mus</kbd><span>I odlingsläge: håll för att hälla, klicka för att klippa, dra för att packa</span><kbd>A / D</kbd><span>Snurra plantan vid skörd</span><kbd>R</kbd><span>Ladda om vapen / vrid stationer</span><kbd>V / högerklick</kbd><span>Sniperns kikarsikte</span><kbd>B</kbd><span>Alla föremål och testverktyg i kreativt läge</span><kbd>E vid bil</kbd><span>Stjäl eller kör · tredjeperson i bilen · kliv ur när du bromsat</span><kbd>G</kbd><span>Plocka upp stationer</span><kbd>P / Tab</kbd><span>Mobilen</span><kbd>T</kbd><span>Chatt i co-op</span><kbd>E vid väns bil</kbd><span>Åk med som passagerare (co-op) · E kliver ur · skjut genom fönstret</span><kbd>Mellanslag i bil</kbd><span>Handbroms</span><kbd>F</kbd><span>Ficklampa</span><kbd>Esc</kbd><span>Paus / avbryt</span></div></div>`;
  $('#startInner').innerHTML=`<div class="menu"><div class="mlogo"><div class="title">DOSKUNGEN</div><div class="tag">i Västmyra</div></div>${nav}${panel}<div class="mfoot">Spelet sparas automatiskt. Kreativt läge har en egen sparfil.</div></div>`}
 function startSlot(n,fresh){CUR_SLOT=n;try{localStorage.setItem('glimm_cur',n)}catch(e){}const mp=MENU.mode==='mp';
  if(fresh){slotDel(n);begin(null);if(mp){skipIntro();setTimeout(()=>openMP(),900)}}else{const s=slotLoad(n);begin(s);if(mp)setTimeout(()=>openMP(),300)}}
@@ -3808,11 +3805,10 @@ const artHeldBase=updateHeld;updateHeld=function(){artHeldBase();if(!ART.support
 
 function visTuneMaterials(){const seen=new Set();scene.traverse(o=>{for(const m of(o.material?(Array.isArray(o.material)?o.material:[o.material]):[])){if(!m?.isMeshStandardMaterial||seen.has(m))continue;seen.add(m);if(m.userData.art){m.envMapIntensity=m.metalness>.1?.65:.16;continue}m.flatShading=false;m.envMapIntensity=m.transparent?.55:.12;m.needsUpdate=true}})}
 // A single small, prefiltered studio sky supplies reflections; no per-frame reflection cameras.
-function visEnvInit(){if(SET.q==='låg'||GFX.fb>0)return;try{const faces=[];for(let i=0;i<6;i++){const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),gr=x.createLinearGradient(0,0,0,64);gr.addColorStop(0,'#7daec9');gr.addColorStop(.48,'#b9cbd0');gr.addColorStop(.54,'#616e63');gr.addColorStop(1,'#404637');x.fillStyle=gr;x.fillRect(0,0,64,64);if(i===2){x.fillStyle='#9cbed2';x.fillRect(0,0,64,64)}if(i===3){x.fillStyle='#42493e';x.fillRect(0,0,64,64)}faces.push(c)}const cube=new THREE.CubeTexture(faces);cube.needsUpdate=true;const pm=new THREE.PMREMGenerator(renderer);GFX.env=pm.fromCubemap(cube);scene.environment=GFX.env.texture;pm.dispose();cube.dispose()}catch(e){scene.environment=null}}
+function visEnvInit(){if(SET.q==='låg'||GFX.fb>0)return;try{const faces=[];for(let i=0;i<6;i++){const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),gr=x.createLinearGradient(0,0,0,64);gr.addColorStop(0,'#697b79');gr.addColorStop(.48,'#9c9d8b');gr.addColorStop(.54,'#56594b');gr.addColorStop(1,'#353e3b');x.fillStyle=gr;x.fillRect(0,0,64,64);if(i===2){x.fillStyle='#88938a';x.fillRect(0,0,64,64)}if(i===3){x.fillStyle='#42493e';x.fillRect(0,0,64,64)}faces.push(c)}const cube=new THREE.CubeTexture(faces);cube.needsUpdate=true;const pm=new THREE.PMREMGenerator(renderer);GFX.env=pm.fromCubemap(cube);scene.environment=GFX.env.texture;pm.dispose();cube.dispose()}catch(e){scene.environment=null}}
 function visEnvUpdate(){}
 function pineFronds(){if(ART.geo.pine)return ART.geo.pine;const p=[],n=[],uv=[];function tri(a,b,c){p.push(...a,...b,...c)}for(let layer=0;layer<5;layer++){const y=.37-layer*.185,r=.10+layer*.125;for(let j=0;j<7;j++){const a=j/7*Math.PI*2+layer*.69,dir=[Math.sin(a),Math.cos(a)],side=[Math.cos(a),-Math.sin(a)];for(let k=0;k<3;k++){const t=(k+1)/3,rr=r*t,w=(1-t*.65)*r*.43;const cy=y-.09*t;tri([dir[0]*rr-side[0]*w,cy,dir[1]*rr-side[1]*w],[dir[0]*(rr+r*.35),cy-.10,dir[1]*(rr+r*.35)],[dir[0]*rr+side[0]*w,cy,dir[1]*rr+side[1]*w])}}}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(p,3));geo.computeVertexNormals();return ART.geo.pine=geo}
 function leafCrown(){if(ART.geo.crown)return ART.geo.crown;const group=new THREE.Group();for(const[x,y,z,s]of[[0,0,0,.46],[-.29,.04,.11,.34],[.27,.09,-.07,.36],[-.08,.29,-.16,.35],[.04,-.13,.27,.30]]){const m=artMesh(new THREE.IcosahedronGeometry(s,1),artMat(0xffffff),x,y,z,group);m.scale.y=.87}artBatch(group,true);return ART.geo.crown=group.children[0].geometry}
-function mountainGeo(r,h,seed){const R=srng(seed*951|0),g=new THREE.SphereGeometry(1,24,12),p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i),a=Math.atan2(z,x),ridge=1+.13*Math.sin(a*3+.7)+.08*Math.sin(a*7+seed);p.setXYZ(i,x*r*ridge,(y*h*.39)*(1+.12*Math.sin(a*4))+h*.02,z*r*.81*ridge)}g.computeVertexNormals();return g}
 function windowUnit(x,y,z,w,h,face,col){INST.win.push([x,y,z+face*.047,w,h,1]);const trim=M(shadeHex(col,.85));box(w+.16,.11,.23,col,x,y-h/2-.055,z+face*.10,scene,false);box(w+.14,.085,.15,col,x,y+h/2+.042,z+face*.08,scene,false);for(const s of[-1,1])box(.072,h,.13,trim,x+s*(w/2+.035),y,z+face*.075,scene,false);box(.045,h,.08,trim,x,y,z+face*.103,scene,false);box(w,.045,.08,trim,x,y+.07,z+face*.105,scene,false)}
 function dressWorld(){const R=srng(8942),metal=artMat(0x4c5a60,.55,.25);
  // Street hardware uses shared geometry so it joins the existing spatial batches.
@@ -4792,7 +4788,7 @@ const RIMM=new THREE.MeshBasicMaterial({color:0xffe9a8,transparent:true,opacity:
 const r12Upd=updateFocus;
 updateFocus=function(dt){r12Upd(dt);if(!FOCUS)return;FOCUSLIGHT.intensity=1.35;if(FOCUS.look){FOCUSLIGHT.position.set(FOCUS.look.x,FOCUS.look.y+.75,FOCUS.look.z+.15)}}
 const r12Soil=focusSoil,r12Seed=focusSeed,r12Water=focusWater,r12Add=focusAdd;
-function withRim(fn){return function(o,slot){const V=VISO[o.uid];let rim=null;if(V&&V.g){rim=new THREE.Mesh(new THREE.TorusGeometry(.34*(V.sc||1),.012,6,32),RIMM);rim.rotation.x=Math.PI/2;rim.position.y=V.soilY+.075;V.g.add(rim)}const r=fn(o,slot);if(FOCUS&&rim){const prev=FOCUS.cleanup;FOCUS.cleanup=function(){if(prev)prev.call(this);V.g.remove(rim)}}else if(rim)V.g.remove(rim);return r}}
+function withRim(fn){return function(o,slot){const V=VISO[o.uid];let rim=null;if(V&&V.g){rim=new THREE.Mesh(new THREE.TorusGeometry(.34*(V.sc||1),.012,6,32),RIMM);rim.rotation.x=Math.PI/2;rim.position.y=V.soilY+.075;V.g.add(rim)}const r=fn(o,slot);if(FOCUS&&rim){const prev=FOCUS.cleanup;FOCUS.cleanup=function(){if(prev)prev.call(this);V.g.remove(rim);rim.geometry.dispose()}}else if(rim){V.g.remove(rim);rim.geometry.dispose()}return r}}
 focusSoil=withRim(r12Soil);focusSeed=withRim(r12Seed);focusWater=withRim(r12Water);focusAdd=withRim(r12Add);
 
 /* ----- 6. Audio: music that follows the mood, footsteps, engine, siren, ambience ----- */
@@ -4814,6 +4810,7 @@ function audNoise(t,d,vol,dest,type='highpass',freq=6000,q=.7){const ac=AC,s=ac.
 function audKick(t,vol,dest){const ac=AC,o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(130,t);o.frequency.exponentialRampToValueAtTime(42,t+.16);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+.28);o.connect(g).connect(dest);o.start(t);o.stop(t+.3)}
 function audMood(){if(!$('#start').hidden)return'menu';if(!S)return'menu';if(POL.W>0||POL.grab)return'chase';if(insideAny()==='casino')return'casino';const h=(S.min/60)%24;return h>=21||h<5?'night':'day'}
 function audMusic(){if(!AUD.nodes)return;const ac=AC,mood=audMood();if(mood!==AUD.mood){AUD.mood=mood;AUD.step=0;AUD.nodes.music.gain.cancelScheduledValues(ac.currentTime);AUD.nodes.music.gain.setValueAtTime(0,ac.currentTime);AUD.nodes.music.gain.linearRampToValueAtTime(.16*(SET.music==null?.5:SET.music)*(SET.vol==null?1:SET.vol),ac.currentTime+1.2);AUD.next=Math.max(AUD.next,ac.currentTime+.05)}
+ if(AUD.next<ac.currentTime-.35)AUD.next=ac.currentTime+.05;
  const song=SONGS[AUD.mood],sp=60/song.bpm/4,dest=AUD.nodes.music;if((SET.music||0)<=0.001){AUD.next=ac.currentTime+.1;return}
  while(AUD.next<ac.currentTime+.25){const st=AUD.step%64,bar=Math.floor(st/16),b16=st%16,t=AUD.next+(b16%2?song.swing*sp*2:0);const ch=song.ch[bar];
   if(b16===0)ch.forEach((n,i)=>audNote(t+i*.012,mf(n),sp*15,'triangle',.07,dest,.05,1800));
@@ -4862,5 +4859,115 @@ addEventListener('input',e=>{const t=e.target;if(t&&t.id==='setM'){SET.music=+t.
  @keyframes ldb{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}@media(prefers-reduced-motion:reduce){.loadbar i{animation:none;width:100%}}`;document.head.appendChild(st);
  const sync=()=>{const on=!$('#start').hidden;if(document.body.classList.contains('onmenu')!==on)document.body.classList.toggle('onmenu',on)};sync();
  new MutationObserver(sync).observe($('#start'),{attributes:true,attributeFilter:['hidden']})}catch(e){}})();
+/* Industrial Västmyra: bounded urban skyline, cheap atmospheric scattering, render-only culling. */
+const URBAN={smokestacks:[],windows:[],chunks:[],boundary:[],smoke:null,built:false};
+const CITYPERF={enabled:true,frustum:new THREE.Frustum(),matrix:new THREE.Matrix4(),sphere:new THREE.Sphere(),point:new THREE.Vector3(),stats:{chunks:0,visible:0,frozen:0,characters:0,animated:0},frame:0};
+function industrialFacade(seed=1){
+ const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d'),r=srng(981+seed),e=document.createElement('canvas');e.width=e.height=256;const ex=e.getContext('2d');ex.fillStyle='#000';ex.fillRect(0,0,256,256);
+ x.fillStyle=['#686965','#736a60','#575f62'][seed%3];x.fillRect(0,0,256,256);
+ for(let i=0;i<1600;i++){x.fillStyle=r()>.5?'rgba(13,21,23,.065)':'rgba(205,192,163,.06)';x.fillRect(r()*256,r()*256,1+r()*7,1+r()*15)}
+ for(let row=0;row<4;row++){x.fillStyle='#373d3b';x.fillRect(0,row*64+61,256,3);for(let col=0;col<4;col++){const xx=col*64+15,yy=row*64+15,on=r()<.27;x.fillStyle='#454945';x.fillRect(xx-3,yy-3,36,37);x.fillStyle=on?'#9a9476':'#2c383b';x.fillRect(xx,yy,30,30);x.fillStyle='#697270';x.fillRect(xx+14,yy,2,30);x.fillRect(xx,yy+14,30,2);x.fillStyle='#8b8a78';x.fillRect(xx-4,yy+31,38,3);if(on){ex.fillStyle='#cda576';ex.fillRect(xx,yy,30,30)}x.fillStyle='rgba(26,31,27,.20)';x.fillRect(xx-1,yy+36,33,14+r()*10)}}
+ const map=new THREE.CanvasTexture(c),em=new THREE.CanvasTexture(e);for(const t of[map,em]){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy())}map.encoding=THREE.sRGBEncoding;
+ const m=new THREE.MeshStandardMaterial({map,emissiveMap:em,emissive:0xf0ba76,emissiveIntensity:.15,roughness:.94});URBAN.windows.push(m);return m;
+}
+function industrialBlock(x,z,w,d,h,mat,r){
+ const geo=new THREE.BoxGeometry(w,h,d),uv=geo.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*(i<8?d:w)/13,uv.getY(i)*h/13);
+ const m=new THREE.Mesh(geo,mat);m.position.set(x,h/2-.10,z);m.receiveShadow=true;m.castShadow=false;scene.add(m);m.userData.urban=true;
+ const roof=box(w+.6,.45,d+.6,0x383f40,x,h,z,scene,false);roof.userData.urban=true;
+ if(r()<.65){const tank=cyl(1.6,1.6,3.2,10,0x495758,x+w*.16,h+1.6,z,scene,false);tank.userData.urban=true;box(3.8,.24,3.8,0x454643,x+w*.16,h+3.3,z,scene,false)}
+}
+function industrialStack(x,z,height){
+ const rust=M(0x6c5040,{roughness:.9}),dark=M(0x393d3b,{roughness:.85});cyl(1.05,1.8,height,12,rust,x,height/2,z,scene,false);cyl(1.22,1.22,.7,12,dark,x,height-.25,z,scene,false);
+ for(let y=5;y<height;y+=7)cyl(1.09+(height-y)/height*.65,1.10+(height-y)/height*.65,.5,12,0x948d79,x,y,z,scene,false);
+ URBAN.smokestacks.push(new THREE.Vector3(x,height,z));
+}
+function buildIndustrialRing(R){
+ if(URBAN.built)return;URBAN.built=true;const r=srng(290317),mats=[0,1,2].map(industrialFacade),wall=TM('concrete',3,2,0x646660,.97),steel=M(0x323d3c,{roughness:.82,metalness:.25});
+ // These bounds sit outside all homes, shops and the harbour. Existing quest routes remain open.
+ for(const [x,z,w,d]of[[35,-15,432,3],[35,216,432,3],[-180,100,3,234],[250,100,3,234]]){
+  box(w,7.6,d,wall,x,3.8,z);box(w+.15,.40,d+.15,0x363e3c,x,7.75,z);const c=addCol(x-w/2,z-d/2,x+w/2,z+d/2);c.cityBoundary=true;URBAN.boundary.push(c);
+  const horizontal=w>d,len=horizontal?w:d;for(let a=-len/2+3;a<len/2;a+=8){const xx=x+(horizontal?a:0),zz=z+(horizontal?0:a);box(.32,9,.32,steel,xx,4.5,zz,scene,false)}
+  box(w,1.1,.08,steel,x,8.65,z,scene,false);
+ }
+ for(const z of[-32,234])for(let x=-166;x<249;x+=23){industrialBlock(x,z,21+r()*3,24,17+r()*24,mats[Math.floor(r()*3)],r)}
+ for(const x of[-198,270])for(let z=-7;z<224;z+=26)industrialBlock(x,z,26,24,19+r()*27,mats[Math.floor(r()*3)],r);
+ for(const z of[-70,274])for(let x=-170;x<263;x+=42)industrialBlock(x,z,26+r()*9,30,35+r()*31,mats[Math.floor(r()*3)],r);
+ // Factory silhouettes and moving plumes replace mountains and green hills.
+ for(const a of[[-133,-32,47],[-108,-32,36],[29,-39,42],[125,-35,50],[-197,100,40],[263,180,52],[50,242,44]])industrialStack(...a);
+ // Closed service exits meet the old road ends; their barriers are visible, solid objects.
+ for(const x of[0,50,100,150,200]){
+  box(9,4.2,.40,steel,x,2.1,-12.9);for(let q=-4;q<=4;q+=.8)box(.10,4.6,.65,0x858579,x+q,2.3,-12.8,scene,false);
+  sign('STÄNGD ZON','#303d3c','#ddc788',4,.72,x,4.7,-12.4);addCol(x-4.6,-13.5,x+4.6,-12.1);
+ }
+ // Reuse facades and street geometry; a few stains and warm sodium lamps add scale near the player.
+ for(const b of BLD){if((b.x2-b.x1)<7||(b.z2-b.z1)<5)continue;const x=b.x1+.4,z=b.z1-.06;
+  box(.7,1.3,.015,TM('concrete',.2,.5,0x555b4b,1),x,.67,z,scene,false);
+ }
+ (WORLD.clouds||[]).forEach(g=>g.visible=false);
+ buildIndustrialSmoke();
+}
+function buildIndustrialSmoke(){
+ const count=SET.q==='låg'?42:SET.q==='hög'?112:77,p=new Float32Array(count*3),ph=new Float32Array(count),rr=srng(692);
+ for(let i=0;i<count;i++){URBAN.smokestacks[i%URBAN.smokestacks.length].toArray(p,i*3);ph[i]=rr()}
+ const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(p,3));geo.setAttribute('phase',new THREE.BufferAttribute(ph,1));
+ const u={time:{value:0},light:{value:1},fogColor:{value:new THREE.Color()},fogRange:{value:new THREE.Vector2(30,240)},pixel:{value:1}};
+ const mat=new THREE.ShaderMaterial({uniforms:u,transparent:true,depthWrite:false,vertexShader:`attribute float phase;uniform float time,pixel;varying float age,dist,seed;void main(){age=fract(phase+time*.021);seed=phase;vec3 p=position;p.x+=age*32.+sin(age*8.+phase*6.)*2.;p.y+=age*19.;p.z+=age*8.+sin(phase*36.+age*4.)*3.;vec4 v=modelViewMatrix*vec4(p,1.);dist=-v.z;gl_Position=projectionMatrix*v;gl_PointSize=min(170.*pixel,(5.+age*18.)*290.*pixel/max(1.,dist));}`,fragmentShader:`uniform float light;uniform vec3 fogColor;uniform vec2 fogRange;varying float age,dist,seed;void main(){vec2 p=gl_PointCoord-.5;float d=length(p);float edge=1.-smoothstep(.19,.5,d);float noise=.82+.18*sin(p.x*18.+seed*34.)*sin(p.y*16.-age*8.);float a=edge*noise*sin(age*3.14159)*.22;float fog=smoothstep(fogRange.x,fogRange.y,dist);vec3 c=mix(vec3(.15,.17,.16)+light*.17,fogColor,fog);gl_FragColor=vec4(c,a*(1.-fog*.75));}`});
+ const points=new THREE.Points(geo,mat);points.frustumCulled=false;points.userData.nonBlocking=points.userData.dynamic=true;scene.add(points);URBAN.smoke={points,u};
+}
+// Layered overcast sky costs a single draw and works without screen-space post-processing.
+sky.material.fragmentShader=`uniform vec3 top,bot,sunDir,sunCol;uniform float night,cloud;varying vec3 vP;void main(){vec3 p=normalize(vP);float h=clamp(p.y*1.3+.12,0.,1.);vec3 c=mix(bot,top,pow(h,.72));float banks=sin(p.x*14.+p.z*8.)*.035+sin(p.z*31.-p.x*6.)*.020;float veil=smoothstep(-.05,.6,p.y)*(1.-night*.6);c+=banks*veil;float s=max(dot(p,normalize(sunDir)),0.);c+=sunCol*(pow(s,260.)*.22+pow(s,12.)*.045)*(1.-night)*(1.-cloud*.6);gl_FragColor=vec4(c,1.);}`;sky.material.needsUpdate=true;
+const industrialLightingBase=lighting;
+lighting=function(dt,t){industrialLightingBase(dt,t);if(!S)return;const h=(S.min/60)%24,day=h<5?0:h<7.5?(h-5)/2.5:h<18?1:h<21?1-(h-18)/3:0,dusk=h>17&&h<21?Math.sin((h-17)/4*Math.PI):0;
+ skyU.top.value.setHex(0x0e1720).lerp(new THREE.Color(0x657873),day);skyU.bot.value.setHex(0x283139).lerp(new THREE.Color(0xa2a18a),day).lerp(new THREE.Color(0xa58b6e),dusk*.18);skyU.cloud.value=.45+rainAmt*.5;
+ const far=(SET.q==='hög'?290:SET.q==='låg'?185:245)*(1-rainAmt*.28);if(scene.fog){scene.fog.color.copy(skyU.bot.value);scene.fog.near=lerp(24,9,rainAmt);scene.fog.far=far;}
+ sun.intensity=.035+day*.95*(1-rainAmt*.65);sun.color.setHex(0xddc49c);hemi.color.setHex(0xa2b1b7);hemi.groundColor.setHex(0x4b4b3e);hemi.intensity=.29+day*.34;amb.intensity=.055+day*.055;
+ renderer.toneMappingExposure=.88;winMat.emissiveIntensity=.18+(1-day)*.85;lampMat.emissiveIntensity=.5+(1-day)*1.35;glowMat.opacity=.12+(1-day)*.50;
+ WORLD.stars.material.opacity=(1-day)*.23;for(const m of URBAN.windows)m.emissiveIntensity=.12+(1-day)*.52;
+ if(grade){grade.uniforms.sat.value=.83;grade.uniforms.vig.value=.34;grade.uniforms.warm.value.set(.98,1.0,.99)}
+ if(URBAN.smoke){const u=URBAN.smoke.u;u.time.value=t/1000;u.light.value=day;u.fogColor.value.copy(skyU.bot.value);u.fogRange.value.set(scene.fog?.near||20,far);u.pixel.value=renderer.getPixelRatio()}
+};
+function staticCityProtected(o,skip){for(let a=o;a&&a!==scene;a=a.parent)if(a===camera||skip.has(a)||a.userData.dynamic||a.userData.character||a.userData.nonBlocking||a.isBone)return true;return false}
+function prepareCityChunks(){
+ const skip=new Set(),protect=o=>{if(o?.isObject3D)skip.add(o);else if(Array.isArray(o))o.forEach(protect)};Object.values(WORLD).forEach(protect);if(INT.casino)skip.add(INT.casino.g);
+ scene.updateMatrixWorld(true);const list=[];scene.traverse(o=>{if(o.isMesh&&!o.isSkinnedMesh&&!o.children.length&&!staticCityProtected(o,skip))list.push(o)});
+ const groups=new Map(),bound=new THREE.Sphere();
+ for(const m of list){if(!m.geometry.boundingSphere)m.geometry.computeBoundingSphere();bound.copy(m.geometry.boundingSphere).applyMatrix4(m.matrixWorld);if(!Number.isFinite(bound.radius))continue;
+  m.updateMatrix();m.matrixAutoUpdate=false;CITYPERF.stats.frozen++;if(bound.radius>62)continue;
+  const key=Math.floor(bound.center.x/32)+','+Math.floor(bound.center.z/32);let c=groups.get(key);if(!c){const g=new THREE.Group();g.userData.renderCullOnly=true;scene.add(g);c={g,box:new THREE.Box3(),sphere:new THREE.Sphere()};groups.set(key,c)}
+  // Attach preserves world transforms, so raycasts and collision locations do not move.
+  c.g.attach(m);m.updateMatrix();m.matrixAutoUpdate=false;const b=new THREE.Box3().setFromCenterAndSize(bound.center,new THREE.Vector3().setScalar(bound.radius*2));c.box.union(b);
+ }
+ for(const c of groups.values()){c.box.getBoundingSphere(c.sphere);c.g.updateMatrix();c.g.matrixAutoUpdate=false;URBAN.chunks.push(c)}
+ scene.updateMatrix();scene.matrixAutoUpdate=false;CITYPERF.stats.chunks=URBAN.chunks.length;
+}
+const industrialBatchBase=batchStaticWorld;batchStaticWorld=function(){industrialBatchBase();(WORLD.clouds||[]).forEach(g=>g.visible=false);prepareCityChunks()};
+function bulletInScene(o){for(let p=o;p;p=p.parent){if(!p.visible&&!p.userData.renderCullOnly)return false;if(p===scene)return true}return false}
+updateRenderBudget=function(dt){
+ shadowClock-=dt;if(shadowClock<=0){renderer.shadowMap.needsUpdate=true;shadowClock=SET.q==='hög'?1/30:1/20}
+ camera.updateMatrixWorld(true);CITYPERF.matrix.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);CITYPERF.frustum.setFromProjectionMatrix(CITYPERF.matrix);const pos=camera.position;let visible=0,characters=0;
+ for(const c of URBAN.chunks){const edge=c.sphere.center.distanceTo(pos)-c.sphere.radius,shadowNear=Math.hypot(c.sphere.center.x-pos.x,c.sphere.center.z-pos.z)-c.sphere.radius<46;c.g.visible=!CITYPERF.enabled||(edge<(scene.fog?.far||290)+8&&(shadowNear||CITYPERF.frustum.intersectsSphere(c.sphere)));if(c.g.visible)visible++}
+ for(const ch of CHARACTERS){if(!ch.g.parent){CHARACTERS.delete(ch);continue}if(!ch.rig||!characterInScene(ch.g))continue;
+  const p=ch.g.parent===scene?CITYPERF.point.copy(ch.g.position):ch.g.getWorldPosition(CITYPERF.point),d=p.distanceTo(pos),level=d<(SET.q==='låg'?3.8:5.5)?0:d<(SET.q==='hög'?23:17)?1:2;
+  CITYPERF.sphere.center.copy(p);CITYPERF.sphere.center.y+=.9;CITYPERF.sphere.radius=1.5;
+  const draw=!CITYPERF.enabled||d<36||(d<(scene.fog?.far||260)&&CITYPERF.frustum.intersectsSphere(CITYPERF.sphere));ch.body.visible=draw;ch.userRenderVisible=draw;
+  for(const m of ch.rig.meshes){m.visible=m.userData.level===level;m.castShadow=d<32}for(const m of ch.rig.coatMeshes){m.visible=m.userData.level===level;m.castShadow=d<32}ch.eyes.visible=level<2;ch.shadow.visible=d<28&&!ch.ko&&!ch.seated;if(draw)characters++;if(d>55)ch.icon.visible=false;
+ }
+ for(const m of ART.cars){if(!m.g.parent){ART.cars.delete(m);continue}const d=m.g.position.distanceTo(pos);if(m.cabin)m.cabin.visible=d<42;if(m.glazing)m.glazing.visible=d<60}
+ CITYPERF.stats.visible=visible;CITYPERF.stats.characters=characters;CITYPERF.frame++;
+};
+const industrialAnimBase=animChar;
+animChar=function(c,speed,dt){if(!c?.rig)return industrialAnimBase(c,speed,dt);const p=c.g.parent===scene?c.g.position:c.g.getWorldPosition(CITYPERF.point),d=p.distanceTo(camera.position),interval=!CITYPERF.enabled||d<22||c.grabbing||c.seated?0:d>70?.20:c.userRenderVisible===false?.12:.055;c.visualDt=(c.visualDt||0)+dt;if(c.visualDt<interval)return;const elapsed=c.visualDt;c.visualDt=0;industrialAnimBase(c,speed,elapsed)};
+// Reuse transient raycast storage. It is CPU-only and never uploaded to the GPU.
+const SCULPT_RAY_CACHE=new WeakMap();
+continuousRaycast=function(raycaster,intersections){const mesh=this,ch=mesh.userData.character;if(!ch)return;ch.g.updateMatrixWorld(true);ch.rig.skeleton.update();const original=mesh.geometry,p=original.attributes.position;let cache=SCULPT_RAY_CACHE.get(mesh);if(!cache||cache.source!==original){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(p.count*3),3));geometry.setIndex(original.index);cache={source:original,geometry,proxy:new THREE.Mesh(geometry,mesh.material),vector:new THREE.Vector3(),hits:[]};SCULPT_RAY_CACHE.set(mesh,cache)}
+ const positions=cache.geometry.attributes.position.array,v=cache.vector;for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i);mesh.boneTransform(i,v);v.toArray(positions,i*3)}cache.geometry.boundingSphere=null;cache.geometry.boundingBox=null;cache.geometry.computeBoundingSphere();cache.proxy.matrixWorld.copy(mesh.matrixWorld);cache.hits.length=0;THREE.Mesh.prototype.raycast.call(cache.proxy,raycaster,cache.hits);for(const h of cache.hits){h.object=mesh;intersections.push(h)}};
+// Existing NPCs created during initialization must use the same reusable raycast path.
+for(const ch of CHARACTERS)if(ch.rig)for(const m of [...ch.rig.meshes,...ch.rig.coatMeshes])m.raycast=continuousRaycast;
+// The surveillance indicator must refresh even while the rest of the HUD is unchanged.
+let industrialEyeAt=0;const industrialHudBase=updateHud;
+updateHud=function(){industrialHudBase();const now=performance.now();if(now<industrialEyeAt||!S)return;industrialEyeAt=now+250;const el=$('#eye'),on=!chasing()&&!insideAny()&&COPS.some(c=>copEyes(c,copRange()));el.hidden=!on};
+/* Crouch is a toggle: press C to crouch, press again to stand */
+let CROUCHT=false;
+addEventListener('keydown',e=>{if(!e.target||e.target.tagName==='INPUT'||e.repeat)return;if(e.key.toLowerCase()==='c'&&S&&running()&&!modalOpen()&&!phoneOpen&&!FOCUS&&!inCar&&!MP.ride){CROUCHT=!CROUCHT}});
 </script>
 </body></html>
