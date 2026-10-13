@@ -23,6 +23,7 @@
     "productName": "Doskungen i Västmyra",
     "files": [
       "main.js",
+      "rewrite.js",
       "app/**/*"
     ],
     "directories": {

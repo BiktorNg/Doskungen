@@ -1,0 +1,39 @@
+DOSKUNGEN – LJUDKÄLLOR OCH LICENSER
+
+Alla ljud ligger inbäddade i Doskungen.html. Ingen nedladdning krävs under spel.
+
+Kenney – Impact Sounds, RPG Audio, Interface Sounds
+https://kenney.nl/assets/impact-sounds
+https://kenney.nl/assets/rpg-audio
+https://kenney.nl/assets/interface-sounds
+CC0: https://creativecommons.org/publicdomain/zero/1.0/
+Används till steg, dörrar, slag, kollisioner, föremål och gränssnitt.
+Ändringar: mono, 22.05 kHz, MP3, volymutjämning.
+
+Q009 – Q009's weapon sounds
+https://opengameart.org/content/q009s-weapon-sounds
+CC BY-SA 3.0: https://creativecommons.org/licenses/by-sa/3.0/
+Filer: pistol, rifle (sniper), shotgun, explosion, outofammo, weapswitch.
+Ändringar: mono, 22.05 kHz, MP3 och volymutjämning.
+Dessa anpassade ljud licensieras också under CC BY-SA 3.0.
+De finns separat i ZIP-paketets Ljud/Q009-mp3 för enkel återanvändning.
+Full licenstext och upphovspersonens originalmeddelande ligger i samma mapp.
+
+Alex McCulloch / Pro Sensory – Reggae
+https://opengameart.org/content/reggae
+CC0. Musikspåret är cirka 3 minuter 58 sekunder.
+Ändringar: nivåutjämning och MP3 96 kbit/s, stereo.
+
+pauliuw – Engine sounds(2)
+https://opengameart.org/content/engine-sounds2
+CC0. Ett åttasekunders utdrag av engine_sound.mp3, mono, nivåutjämnat.
+Loopen korsfadas vid inläsning och ändrar tonhöjd efter motorvarv i spelet.
+
+YCbCr – Generator (loop)
+https://opengameart.org/content/generator-loop
+CC0. Fem sekunders utdrag, mono, nivåutjämnat och korsfadat i spelet.
+
+Regn och rinnande vatten är egna genererade ljudbäddar för denna version.
+De distribueras under CC0 tillsammans med spelet.
+
+Källornas licensuppgifter kontrollerade 2026-10-13.
