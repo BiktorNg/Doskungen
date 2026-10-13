@@ -1,0 +1,47 @@
+{
+  "name": "doskungen",
+  "productName": "Doskungen i Västmyra",
+  "version": "1.0.0",
+  "description": "Doskungen i Västmyra – spelet som Windows-app",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "prepare-game": "node prepare.js",
+    "start": "node prepare.js && electron .",
+    "dist": "node prepare.js && electron-builder --win nsis portable --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "three": "0.128.0",
+    "@fontsource/lilita-one": "^5.0.0",
+    "@fontsource/nunito": "^5.0.0",
+    "peerjs": "1.5.4"
+  },
+  "build": {
+    "appId": "se.doskungen.vastmyra",
+    "productName": "Doskungen i Västmyra",
+    "files": [
+      "main.js",
+      "app/**/*"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Doskungen i Västmyra",
+      "artifactName": "Doskungen-Setup.exe"
+    },
+    "portable": {
+      "artifactName": "Doskungen-Portabel.exe"
+    }
+  }
+}
