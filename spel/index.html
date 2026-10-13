@@ -490,6 +490,7 @@ function roundBoxGeo(w,h,d,r){const k=[w,h,d,r].map(v=>v.toFixed(2)).join();if(R
 function box(w,h,d,c,x,y,z,parent=scene,cast=true){const m=new THREE.Mesh(BOXG,typeof c==='number'?M(c):c);m.scale.set(w,h,d);m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=true;parent.add(m);return m}
 function rbox(w,h,d,r,c,x,y,z,parent=scene,cast=true){const m=new THREE.Mesh(roundBoxGeo(w,h,d,Math.min(r,w/2-.001,h/2-.001,d/2-.001)),typeof c==='number'?M(c):c);m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=true;parent.add(m);return m}
 const CYLG={};function cylinderGeo(rt,rb,h,seg){const k=[rt,rb,h,seg].join('|');return CYLG[k]||(CYLG[k]=new THREE.CylinderGeometry(rt,rb,h,seg))}
+const GROUNDS=[];{const __box0=box;box=function(w,h,d,c,x,y,z,parent=scene,cast=true){const m=__box0(w,h,d,c,x,y,z,parent,cast);if(parent===scene&&h>=.1&&h<=.32&&Math.abs(y-h/2)<.03&&Math.min(w,d)>=1.2)GROUNDS.push([x-w/2,z-d/2,x+w/2,z+d/2,h]);return m}}
 function cyl(rt,rb,h,seg,c,x,y,z,parent=scene,cast=true){const m=new THREE.Mesh(cylinderGeo(rt,rb,h,Math.min(seg,10)),typeof c==='number'?M(c):c);m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=true;parent.add(m);return m}
 const GEO={};function sphereGeo(r,ws=8,hs=5){const k='ico'+r;return GEO[k]||(GEO[k]=new THREE.IcosahedronGeometry(r,1))}
 function sph(r,c,x,y,z,parent=scene,sx=1,sy=1,sz=1,cast=true){const m=new THREE.Mesh(sphereGeo(r),typeof c==='number'?M(c):c);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=cast;parent.add(m);return m}
@@ -2234,7 +2235,7 @@ function updatePolice(dt){
   if(POL.W>0&&!c.chase&&d<[0,40,70,999][POL.W]&&copSees(c,45)){c.chase=true;c.mode='chase'}
   if(mpCop(c,ck,dt))return;
   if(c.chase){const sees=copSees(c,50);if(sees){anySee=true;c.lk={x:P.x,z:P.z}}const tg=sees?P:c.lk||P;const dx=tg.x-c.x,dz=tg.z-c.z,dd=Math.hypot(dx,dz);
-   if(dd>.4){const sp=sees?(inCar?8.5:5.4):4;c.x+=dx/dd*sp*dt;c.z+=dz/dd*sp*dt;pushOut(c,.38);c.dir=Math.atan2(dx,dz);c.speed=sp}else{c.speed=0;if(!sees){const a=rand()*7;c.lk={x:c.x+Math.cos(a)*8,z:c.z+Math.sin(a)*8}}}
+   const holding=POL.grab&&POL.grab.c===c;if(dd>(holding?1.0:.4)){const sp=holding?3.2:sees?(inCar?8.5:5.4):4;c.x+=dx/dd*sp*dt;c.z+=dz/dd*sp*dt;pushOut(c,.38);c.dir=Math.atan2(dx,dz);c.speed=sp}else{c.speed=0;if(!sees){const a=rand()*7;c.lk={x:c.x+Math.cos(a)*8,z:c.z+Math.sin(a)*8}}}
    if(sees&&d<1.25&&!inCar)startArrest(c);
    if(sees&&POL.W>=2&&d<7&&d>2.2&&c.taseCD<=0&&!inCar)tase(c)}
   else if(c.mode==='return'){const[i,j]=nearestNode(c.x,c.z,c.w.area);const tx=gridX(c.w.area)[i],tz=gridZ(c.w.area)[j],dx=tx-c.x,dz=tz-c.z,dd=Math.hypot(dx,dz);if(dd<.3){c.mode='walk';Object.assign(c.w,{x:tx,z:tz,i,j,path:[],pi:-1})}else{const ox=c.x,oz=c.z;c.x+=dx/dd*2.8*dt;c.z+=dz/dd*2.8*dt;pushOut(c,.4);c.dir=Math.atan2(dx,dz);c.speed=2.8;if(Math.hypot(c.x-ox,c.z-oz)<.5*dt){c.stuck=(c.stuck||0)+dt;if(c.stuck>2){c.x=tx;c.z=tz;c.stuck=0}}}}
@@ -2293,7 +2294,7 @@ function caught(){const t=PP.target;endPick(false,true);floatText(t.w.x,2.6,t.w.
 function endPick(done,wasCaught){if(!PP)return;const t=PP.target;t.frozen=false;t.picked=abs()+1440;if(done&&!wasCaught)toast(`Du tömde fickorna utan att märkas!`,'cash');else if(!wasCaught&&PP.grabbed)toast(`Du drog dig undan med ${PP.grabbed} saker.`);PP=null;$('#pp').hidden=true;hbSig='';setTimeout(lockMouse,60)}
 $('#ppStop').addEventListener('click',()=>endPick(false));
 $('#ppSlots').addEventListener('click',e=>{const b=e.target.closest('.pps');if(b)ppTake(+b.dataset.i)});
-$('#ppBar').addEventListener('pointerdown',()=>ppHit());
+$('#ppBar').addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse')ppHit()});
 
 /* ---------- Traffic ---------- */
 let TRAF=[];
@@ -2565,7 +2566,8 @@ function mpClock(){const H=mpHostPeer();if(!H||!H.pres.wd)return;const wd=H.pres
  if(!MP.hostSeen){MP.hostSeen=true;MP.seenSleep=wd.sl;mpNote(`Ansluten till ${mpNameOf(H.pres)}s värld.`);MP.status='Ansluten.';mpRefresh()}
  if(wd.sl>MP.seenSleep){MP.seenSleep=wd.sl;const inBed=MP.ready;MP.ready=false;closeAll();fadeOut(()=>{sleep(!inBed);S.day=wd.d;S.min=Math.max(S.min,420);lastMin=S.min});return}
  if(wd.we)S.weather={rain:wd.we[0],from:wd.we[1],to:wd.we[2]};
- if(wd.d>S.day||(wd.d===S.day&&wd.m-S.min>240)){S.day=wd.d;S.min=wd.m;lastMin=S.min;placeLives();return}
+ if(wd.d!==S.day||Math.abs(wd.m-S.min)>240){S.day=wd.d;S.min=wd.m;lastMin=S.min;placeLives();return}
+ if(wd.d===S.day&&S.min-wd.m>2){S.min=wd.m;lastMin=S.min}
  if(wd.d===S.day&&wd.m>S.min){let k=0;while(S.min<wd.m&&k++<240){S.min++;const T=abs();stepMinute(T);if(T%60===0)dealerHour(T)}}}
 function mpHostJoinSync(){for(const o of mpOthers()){const p=o.pres;if(MP.syncedFrom[p.id])continue;MP.syncedFrom[p.id]=1;
  if(p.d>S.day||(p.d===S.day&&p.m>S.min+5)){S.day=p.d;S.min=p.m;lastMin=S.min;placeLives();mpNote(`Klockan ställdes fram till ${mpNameOf(p)}s tid (dag ${p.d}).`)}}}
@@ -3048,7 +3050,7 @@ function setMouse(e){const r=cv.getBoundingClientRect();MOUSE.set((e.clientX-r.l
 let drag=null;
 cv.addEventListener('pointerdown',e=>{if(!running())return;setMouse(e);if(PP)return;
  if(FOCUS){if(e.button===2){endFocus();return}mDown=true;if(FOCUS.down)FOCUS.down();return}
- if(locked()){if(e.button===0){if(!attackInput()){if(near&&near.fn&&near.kind!=='ent'&&near.kind!=='npc')interact();else if(CB.cd<=0&&!inCar&&!FOCUS){CB.cd=.4;swingAnim()}}}return}if(!isTouch&&e.pointerType==='mouse')lockMouse();drag={id:e.pointerId,x:e.clientX,y:e.clientY};try{cv.setPointerCapture(e.pointerId)}catch(_){}});
+ if(locked()){if(e.button===0){if(!attackInput()){if(CB.cd<=0&&!inCar&&!FOCUS){CB.cd=.4;swingAnim()}}}return}if(!isTouch&&e.pointerType==='mouse')lockMouse();drag={id:e.pointerId,x:e.clientX,y:e.clientY};try{cv.setPointerCapture(e.pointerId)}catch(_){}});
 cv.addEventListener('pointermove',e=>{setMouse(e);if(FOCUS)return;if(!drag||drag.id!==e.pointerId||locked())return;cam.yaw-=(e.clientX-drag.x)*.005;cam.pitch=clamp(cam.pitch-(e.clientY-drag.y)*.005,-1.45,1.45);drag.x=e.clientX;drag.y=e.clientY});
 const endDrag=e=>{if(FOCUS&&mDown){mDown=false;if(FOCUS.up)FOCUS.up()}if(drag&&drag.id===e.pointerId)drag=null};cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
 cv.addEventListener('wheel',e=>{if(running()&&!modalOpen()&&!FOCUS)selectSlot(S.sel+(e.deltaY>0?1:-1));e.preventDefault()},{passive:false});
@@ -3063,7 +3065,7 @@ if(isTouch){$('#touch').hidden=false;const st=$('#stick'),kn=$('#knob');let id=n
  $('#tHit').addEventListener('click',()=>{if(running()&&!attackInput()&&CB.cd<=0){CB.cd=.4;swingAnim()}});
  $('#tPh').addEventListener('click',()=>{if(running())phoneOpen?closePhone():openPhone()});
  const tr=$('#tRun');tr.addEventListener('pointerdown',()=>touchRun=true);['pointerup','pointercancel','pointerleave'].forEach(ev=>tr.addEventListener(ev,()=>touchRun=false))}
-$('#prompt').addEventListener('click',()=>interact());
+$('#prompt').addEventListener('click',()=>{if(isTouch)interact()});
 const running=()=>S&&$('#start').hidden&&!PAUSED;
 
 /* ---------- Interaction ---------- */
@@ -3082,6 +3084,7 @@ function gather(){
   else if(D.id==='shed'&&!S.flags.shed)lockMsg='Låst med kodlås';
   else if(PROPDEF[D.id]&&D.id!=='motel'&&!S.props[D.id].owned)lockMsg=PROPDEF[D.id].n+' – till salu hos Mäklaren';
   else if(HOURS[D.id]&&!shopOpen(D.id)&&inId!==D.id)lockMsg=`Stängt – öppnar ${String(HOURS[D.id][0]).padStart(2,'0')}:00`;
+  if(lockMsg&&(D.id==='motel'||PROPDEF[D.id])&&mpAccess(D.id))lockMsg=null;
   cand(D.x,D.z,1.7,lockMsg&&!D.open?lockMsg:(D.open?'Stäng ':'Öppna ')+D.name.toLowerCase(),lockMsg&&!D.open?null:()=>{D.open=!D.open;D.col.off=D.open;tone(D.open?300:200,.08,'square',.03)},.6)});
  if(!inId){cand(SPOT.gunshop.x,SPOT.gunshop.z,3,'Handla hos Västmyra Vapen',openArmsShop,.35);HOMES.forEach(h=>{if(h.kind==='house')cand(h.door.x,h.door.z+.5,1.9,'Knacka på – '+h.name,()=>knock(h),.6)});(WORLD.apts||[]).forEach(a=>cand(a.intercom.x,a.intercom.z,1.8,'Porttelefon – '+a.name,()=>openIntercom(a),.5));HIDES.forEach(h=>cand(h.x,h.z,2,'Göm dig i containern',()=>hideIn(h),.6))}
  if(!S.flags.shed)cand(SPOT.keypad.x,SPOT.keypad.z,1.6,'Kodlås',openKeypad);
@@ -3166,7 +3169,7 @@ function update(dt){
  const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=Math.cos(cam.yaw),rz=-Math.sin(cam.yaw);
  let mf=(keys['w']||keys['arrowup']?1:0)-(keys['s']||keys['arrowdown']?1:0),ms=(keys['d']||keys['arrowright']?1:0)-(keys['a']||keys['arrowleft']?1:0);
  if(joy.x||joy.y){mf=-joy.y;ms=joy.x}if(uiOpen||busy||FOCUS||PP||POL.arrest||POL.stun>0||HIDDEN||ANSWER&&modalOpen()){mf=ms=0}
- P.crouch=!inCar&&(keys['c']||keys['control'])&&!POL.arrest;P.vy=(P.vy||0)-13*dt;P.y=Math.max(0,(P.y||0)+P.vy*dt);if(P.y<=0)P.vy=0;
+ P.crouch=!inCar&&keys['c']&&!POL.arrest;P.vy=(P.vy||0)-13*dt;P.y=Math.max(0,(P.y||0)+P.vy*dt);if(P.y<=0)P.vy=0;
  if(inCar){DRIVE_INPUT.gas=mf;moveDrivenCar(dt,ms)}
  else{const l=Math.hypot(mf,ms);const run=(keys['shift']||touchRun)&&P.stam>3&&l>0&&!P.crouch;const sp=(P.crouch?1.7:run?6.5:3.6)*doseMul('spd');
   if(l>0){const vx=(fx*mf+rx*ms)/Math.max(1,l),vz=(fz*mf+rz*ms)/Math.max(1,l);const moved=movePlayer(vx*sp*dt*Math.min(1,l),vz*sp*dt*Math.min(1,l));P.speed=Math.min(sp*Math.min(1,l),moved/Math.max(dt,.001))}else P.speed=0;
@@ -3240,7 +3243,7 @@ function placeCamera(dt){
  if(INTRO&&BUS){const v=BUS.g.localToWorld(new THREE.Vector3(-.7,2.3,1.5));camera.position.copy(v);camera.rotation.set(cam.pitch,cam.yaw+Math.PI/2*0,0,'YXZ');camera.rotation.y=cam.yaw-Math.PI/2+Math.PI/2;VM.visible=false;return}
  if(FOCUS){const k=1-Math.pow(.002,dt);camera.position.lerp(FOCUS.camPos,k);FOCUS.curLook.lerp(FOCUS.look,k);camera.lookAt(FOCUS.curLook);VM.visible=false;return}
  if(inCar){placeDrivingCamera(dt);return}
- else{P.bob+=dt*P.speed*2.4;P.eye=lerp(P.eye||1.65,P.crouch?1.05:1.65,Math.min(1,dt*10));camera.position.set(P.x,P.eye+(P.y||0)+(P.speed>.1&&P.y<=0?Math.sin(P.bob)*.04:0),P.z)}
+ else{P.bob+=dt*P.speed*2.4;P.eye=lerp(P.eye||1.65,P.crouch?1.05:1.65,Math.min(1,dt*10));camera.position.set(P.x,P.eye+(P.y||0)+playerGround(dt)+(P.speed>.1&&P.y<=0?Math.sin(P.bob)*.04:0),P.z)}
  if(POL.arrest){const c=POL.arrest.c;const want=Math.atan2(-(c.x-P.x),-(c.z-P.z));let dy=want-cam.yaw;while(dy>Math.PI)dy-=Math.PI*2;while(dy<-Math.PI)dy+=Math.PI*2;cam.yaw+=dy*Math.min(1,dt*5);cam.pitch=lerp(cam.pitch,-.15,dt*3)}
  if(POL.stun>0){cam.pitch+=Math.sin(performance.now()/40)*.004;cam.yaw+=Math.cos(performance.now()/37)*.004}
  camera.rotation.set(cam.pitch,cam.yaw,0,'YXZ');
@@ -3307,11 +3310,11 @@ let PAUSED=false;
 function openPause(){PAUSED=true;$('#pause').hidden=false;renderPause('main')}
 function closePause(){PAUSED=false;$('#pause').hidden=true;lockGrace=1;setTimeout(()=>{lockGrace=0},400);lockMouse()}
 function renderPause(view){const p=$('#pauseInner');
- if(view==='main')p.innerHTML=`<div class="ptitle">Paus</div><button class="pbtn" data-p="resume">Fortsätt</button><button class="pbtn" data-p="mp">Multiplayer${MP.on?' · '+MP.code:''}</button><button class="pbtn" data-p="settings">Inställningar</button><button class="pbtn" data-p="save">Spara spelet</button><button class="pbtn" data-p="menu">Huvudmeny</button><p class="sub">Dag ${S.day}, ${dayName(S.day).toLowerCase()} · ${hhmm(S.min)}</p>`;
+ if(view==='main')p.innerHTML=`<div class="ptitle">Paus</div><button class="pbtn" data-p="resume">Fortsätt</button><button class="pbtn" data-p="mp">Multiplayer${MP.on?' · '+MP.code:''}</button><button class="pbtn" data-p="settings">Inställningar</button><button class="pbtn" data-p="fs">Helskärm (låser webbläsarens Ctrl-kommandon)</button><button class="pbtn" data-p="save">Spara spelet</button><button class="pbtn" data-p="menu">Huvudmeny</button><p class="sub">Dag ${S.day}, ${dayName(S.day).toLowerCase()} · ${hhmm(S.min)}</p>`;
  else p.innerHTML=`<div class="ptitle">Inställningar</div>
  <label class="set"><span>Grafik</span><select id="setQ"><option ${SET.q==='låg'?'selected':''}>låg</option><option ${SET.q==='medel'?'selected':''}>medel</option><option ${SET.q==='hög'?'selected':''}>hög</option></select></label>
  <label class="set"><span>Muskänslighet</span><input id="setS" type="range" min=".3" max="2.5" step=".1" value="${SET.sens}"></label>
- <label class="set"><span>Volym</span><input id="setV" type="range" min="0" max="1" step=".05" value="${SET.vol}"></label>
+ <label class="set"><span>Volym</span><input id="setV" type="range" min="0" max="1" step=".05" value="${SET.vol}"></label><label class="set"><span>Musik</span><input id="setM" type="range" min="0" max="1" step=".05" value="${SET.music==null?.5:SET.music}"></label>
  <label class="set"><span>Synfält</span><input id="setF" type="range" min="60" max="95" step="1" value="${SET.fov}"></label>
  <p class="sub">Grafikändringar gäller efter att sidan laddats om.</p><button class="pbtn" data-p="back">Tillbaka</button>`}
 $('#pause').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(!b)return;const k=b.dataset.p;
@@ -3354,7 +3357,7 @@ function renderMenu(){const m=slotMeta(),L=latestSlot();const v=MENU.view;
  if(v==='set')panel=`<div class="mpanel"><h3>Inställningar</h3>
   <label class="set"><span>Grafik</span><select id="setQ"><option ${SET.q==='låg'?'selected':''}>låg</option><option ${SET.q==='medel'?'selected':''}>medel</option><option ${SET.q==='hög'?'selected':''}>hög</option></select></label>
   <label class="set"><span>Muskänslighet</span><input id="setS" type="range" min=".3" max="2.5" step=".1" value="${SET.sens}"></label>
-  <label class="set"><span>Volym</span><input id="setV" type="range" min="0" max="1" step=".05" value="${SET.vol}"></label>
+  <label class="set"><span>Volym</span><input id="setV" type="range" min="0" max="1" step=".05" value="${SET.vol}"></label><label class="set"><span>Musik</span><input id="setM" type="range" min="0" max="1" step=".05" value="${SET.music==null?.5:SET.music}"></label>
   <label class="set"><span>Synfält</span><input id="setF" type="range" min="60" max="95" step="1" value="${SET.fov}"></label><p class="sub">Grafikändringar gäller efter att sidan laddats om.</p></div>`;
  if(v==='keys')panel=`<div class="mpanel"><h3>Kontroller</h3><div class="keys"><kbd>WASD</kbd><span>Gå · Shift springer · C/Ctrl hukar · Mellanslag hoppar</span><kbd>E</kbd><span>Använd / prata / plocka upp</span><kbd>Klick / Q</kbd><span>Skjut med valt vapen · annars slå (batong ger mer skada)</span><kbd>1–9</kbd><span>Välj föremål (eller scrolla)</span><kbd>Mus</kbd><span>I odlingsläge: håll för att hälla, klicka för att klippa, dra för att packa</span><kbd>A / D</kbd><span>Snurra plantan vid skörd</span><kbd>R</kbd><span>Ladda om vapen / vrid stationer</span><kbd>V / högerklick</kbd><span>Sniperns kikarsikte</span><kbd>B</kbd><span>Alla föremål och testverktyg i kreativt läge</span><kbd>E vid bil</kbd><span>Stjäl eller kör · tredjeperson i bilen · kliv ur när du bromsat</span><kbd>G</kbd><span>Plocka upp stationer</span><kbd>P / Tab</kbd><span>Mobilen</span><kbd>T</kbd><span>Chatt i co-op</span><kbd>E vid väns bil</kbd><span>Åk med som passagerare (co-op) · E kliver ur · skjut genom fönstret</span><kbd>Mellanslag i bil</kbd><span>Handbroms</span><kbd>F</kbd><span>Ficklampa</span><kbd>Esc</kbd><span>Paus / avbryt</span></div></div>`;
  $('#startInner').innerHTML=`<div class="menu"><div class="mlogo"><div class="title">DOSKUNGEN</div><div class="tag">i Västmyra</div></div>${nav}${panel}<div class="mfoot">Spelet sparas automatiskt. Kreativt läge har en egen sparfil.</div></div>`}
@@ -4633,10 +4636,12 @@ function peerJoin(PeerCls,name,isHost){const hubId='dosk-'+name.replace(/[^a-z0-
   const conn=on=>st.connH.forEach(h=>{try{h(on)}catch(_){}});
   const send=(c,msg)=>{try{if(c&&c.open)c.send(msg)}catch(e){}};
   const broadcast=(msg,except)=>{for(const[id,c]of st.conns)if(id!==except)send(c,msg)};
+  const drop=id=>{const cc=st.conns.get(id);st.conns.delete(id);st.members.delete(id);try{cc&&cc.close()}catch(_){}broadcast({t:'left',id})};
+  const prune=()=>{const t=now();for(const[id,mm]of [...st.members])if(t-mm.at>9000)drop(id)};
   const room={
    presence(patch){const o=Object.assign({},st.me.presence);for(const k in patch){if(patch[k]===null)delete o[k];else o[k]=patch[k]}
     let size=0;try{size=new TextEncoder().encode(JSON.stringify(o)).length}catch(e){size=JSON.stringify(o).length}if(size>4096)return Promise.reject({code:'invalid_argument',message:'presence over 4 KiB'});
-    st.me.presence=Object.freeze(o);st.me.at=now();if(st.isHub)broadcast({t:'p',id:st.self,p:o});else send(st.hub,{t:'p',p:o});return Promise.resolve()},
+    st.me.presence=Object.freeze(o);st.me.at=now();if(st.isHub){broadcast({t:'p',id:st.self,p:o});if(now()-(st.lp||0)>2000){st.lp=now();const n0=st.members.size;prune();if(st.members.size!==n0)emitPeers()}}else{send(st.hub,{t:'p',p:o});if(st.lastHub&&now()-st.lastHub>15000&&!st.stale){st.stale=true;conn(false);fail({code:'värden svarar inte',message:'Värden svarar inte'})}}return Promise.resolve()},
    onPeers(h,onErr){st.handlers.push(h);if(onErr)st.errH.push(onErr);Promise.resolve().then(emitPeers);return()=>{st.handlers=st.handlers.filter(x=>x!==h)}},
    onConnection(h){st.connH.push(h);Promise.resolve().then(()=>h(!!(st.isHub||(st.hub&&st.hub.open))));return()=>{}},
    peers(){return[]},emit(){return Promise.resolve()},on(){return()=>{}},
@@ -4644,12 +4649,12 @@ function peerJoin(PeerCls,name,isHost){const hubId='dosk-'+name.replace(/[^a-z0-
   let peer,settled=false;const done=(ok,v)=>{if(settled)return;settled=true;clearTimeout(to);ok?resolve(v):reject(v)};
   const to=setTimeout(()=>{done(false,{code:isHost?'timeout':'not_found',message:isHost?'Kunde inte nå servern':'Hittar ingen lobby med den koden'});try{peer&&peer.destroy()}catch(e){}},12000);
   const handleMsg=(from,m)=>{if(!m||typeof m!=='object')return;
-   if(st.isHub){if(m.t==='p'&&m.p&&typeof m.p==='object'){const mm=st.members.get(from);if(!mm)return;mm.presence=Object.freeze(m.p);mm.at=now();broadcast({t:'p',id:from,p:m.p},from);emitPeers()}}
-   else{if(m.t==='snap'&&Array.isArray(m.m)){st.members.clear();m.m.forEach(x=>{if(x&&x.id&&x.id!==st.self)st.members.set(x.id,{presence:Object.freeze(x.p||{}),at:now()})});emitPeers()}
+   if(st.isHub){if(m.t==='p'&&m.p&&typeof m.p==='object'){const mm=st.members.get(from);if(!mm)return;const pid=m.p.id;if(pid)for(const[id,o]of [...st.members])if(id!==from&&o.presence&&o.presence.id===pid)drop(id);mm.presence=Object.freeze(m.p);mm.at=now();broadcast({t:'p',id:from,p:m.p},from);emitPeers()}}
+   else{st.lastHub=now();if(m.t==='snap'&&Array.isArray(m.m)){st.members.clear();m.m.forEach(x=>{if(x&&x.id&&x.id!==st.self)st.members.set(x.id,{presence:Object.freeze(x.p||{}),at:now()})});emitPeers()}
     else if(m.t==='p'&&m.id&&m.id!==st.self){st.members.set(m.id,{presence:Object.freeze(m.p||{}),at:now()});emitPeers()}
     else if(m.t==='left'&&m.id){st.members.delete(m.id);emitPeers()}
     else if(m.t==='full'){fail({code:'lobbyn är full – max 4 spelare',message:'Lobbyn är full'});room.leave()}}};
-  const startHub=()=>{st.isHub=true;peer.on('connection',c=>{c.on('open',()=>{if(st.conns.size>=3){send(c,{t:'full'});setTimeout(()=>c.close(),300);return}
+  const startHub=()=>{st.isHub=true;peer.on('connection',c=>{c.on('open',()=>{prune();if(st.conns.size>=3){send(c,{t:'full'});setTimeout(()=>c.close(),300);return}
      st.conns.set(c.peer,c);st.members.set(c.peer,{presence:Object.freeze({}),at:now()});
      send(c,{t:'snap',m:[{id:st.self,p:st.me.presence},...[...st.members].filter(([id])=>id!==c.peer).map(([id,mm])=>({id,p:mm.presence}))]});emitPeers()});
     c.on('data',d=>handleMsg(c.peer,d));const gone=()=>{if(!st.conns.has(c.peer))return;st.conns.delete(c.peer);st.members.delete(c.peer);broadcast({t:'left',id:c.peer});emitPeers()};c.on('close',gone);c.on('error',gone)});
@@ -4712,5 +4717,141 @@ setWanted=function(n,why){if(CB.callMin&&why===CB.callWhy){n=Math.max(n,CB.callM
 let deathDay=null;
 function reviveDead(){const all=[...NPC,...PEDS,...COPS,...(typeof DRIVERS!=='undefined'?DRIVERS:[])];for(const e of all){if(e&&e.dead!=null&&e.dead<S.day){e.dead=null;e.ko={t:.01};e.looted=false}}}
 const deathCamBase=placeCamera;placeCamera=function(dt){deathCamBase(dt);if(!S)return;if(deathDay!==S.day){if(deathDay!=null)reviveDead();deathDay=S.day}};
+
+/* ================= Round 12: keyboard safety, co-op fixes, ground height, arrests, input split, planting view, audio ================= */
+
+/* ----- 1. Browser Ctrl shortcuts: blocked in play, guarded on close, fully locked in fullscreen ----- */
+addEventListener('keydown',e=>{if(!S||$('#start').hidden===false)return;if((e.ctrlKey||e.metaKey||e.altKey)&&e.target&&e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA'){e.preventDefault()}},true);
+addEventListener('beforeunload',e=>{if(!S||$('#start').hidden===false)return;try{save()}catch(_){}e.preventDefault();e.returnValue='';return ''});
+addEventListener('pagehide',()=>{try{if(MP.on&&MP.room)MP.room.leave()}catch(_){}});
+async function toggleFullscreen(){try{if(document.fullscreenElement){await document.exitFullscreen();return}await (document.documentElement.requestFullscreen?document.documentElement.requestFullscreen():Promise.reject());
+ if(navigator.keyboard&&navigator.keyboard.lock){try{await navigator.keyboard.lock(['KeyW','KeyT','KeyN','KeyR','KeyQ','KeyS','KeyD','KeyF','KeyP','KeyH','KeyJ','KeyL','Tab'])}catch(_){}}
+ toast('Helskärm: webbläsarens Ctrl-kommandon är låsta. Håll Esc för att lämna helskärm.')}catch(e){toast('Helskärm går inte här – tryck F11 i webbläsaren.','bad')}}
+document.addEventListener('fullscreenchange',()=>{try{if(!document.fullscreenElement&&navigator.keyboard&&navigator.keyboard.unlock)navigator.keyboard.unlock()}catch(_){}});
+$('#pause').addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-p="fs"]');if(b){e.stopImmediatePropagation();toggleFullscreen()}},true);
+
+/* ----- 2. Co-op: heartbeat, leaving players vanish, shared access to mates' homes ----- */
+const MP_STALE=12000;
+const r12Others=mpOthers;
+mpOthers=function(){const now=Date.now();return r12Others().filter(p=>!p.at||p.at<1e12||now-p.at<MP_STALE)};
+function myAccess(){const a=[];if(!S)return a;if(S.flags&&S.flags.room&&!roomLocked())a.push('motel');for(const id of PROPS){if(id!=='motel'&&S.props[id]&&S.props[id].owned)a.push(id)}return a}
+function mpAccess(id){if(!MP.on)return null;const o=mpOthers().find(o=>Array.isArray(o.pres.acc)&&o.pres.acc.includes(id));return o?o.pres:null}
+const r12State=mpPlayerState;
+mpPlayerState=function(){const s=r12State();s.hb=Math.floor(Date.now()/3000)%1000;s.acc=myAccess();
+ const inId=insideAny();if(inId&&PROPS.includes(inId)&&S.props[inId]&&(S.props[inId].owned||inId==='motel'&&!roomLocked())){s.st=[inId,S.props[inId].objs.slice(0,24).map(o=>[o.type,r1(o.x),r1(o.z),r2(o.r||0),isPotType(o.type)?(o.seed?Math.round((o.prog||0)*10):o.soil?-1:-2):0])]}else s.st=0;return s};
+/* mates' stations show up in their home while you visit */
+const MATE={g:new Map()};
+function mateStations(){if(!MP.on){for(const[k,v]of MATE.g){scene.remove(v.root)}MATE.g.clear();return}const inId=insideAny();const want=new Set();
+ for(const o of mpOthers()){const st=o.pres.st;if(!Array.isArray(st)||st[0]!==inId||!Array.isArray(st[1]))continue;if(S.props[inId]&&S.props[inId].owned&&inId!=='motel')continue;
+  st[1].forEach((x,i)=>{if(!Array.isArray(x)||!STATIONS[x[0]]&&!isPotType(x[0]))return;const key=o.pres.id+':'+i+':'+x[0];want.add(key);let v=MATE.g.get(key);
+   if(!v){let m;try{m=makeStation(x[0])}catch(e){return}const sg=m.g;if(m.pot)Object.assign(m,m.pot);const wrap=new THREE.Group();wrap.add(sg);scene.add(wrap);v={root:wrap,m,stage:null};MATE.g.set(key,v)}
+   v.root.position.set(+x[1]||0,0,+x[2]||0);v.root.rotation.y=+x[3]||0;
+   if(isPotType(x[0])&&v.stage!==x[4]){v.stage=x[4];const p=v.m;if(p.soil){p.soil.visible=x[4]>=-1;p.soil.position.y=p.soilY}if(p.plant){if(x[4]>=0){if(!p.builtPlant){buildPlant(p,6,0x6ec6ff,i*7+3);p.builtPlant=true}p.plant.visible=true;p.plant.scale.setScalar(.1+.09*Math.min(10,x[4]))}else p.plant.visible=false}}})}
+ for(const[k,v]of MATE.g)if(!want.has(k)){scene.remove(v.root);MATE.g.delete(k)}}
+const r12Gather=gather;
+gather=function(){r12Gather();if(!S||!MP.on||!CAND||busy||FOCUS||MP.ride||inCar)return;const inId=insideAny();if(!inId||!PROPS.includes(inId))return;const own=S.props[inId]&&(inId==='motel'?!roomLocked():S.props[inId].owned);if(own)return;
+ const mate=mpAccess(inId);const G=INT[inId];if(mate&&G&&G.bed)CAND(G.bed.x,G.bed.z,1.8,`${mpNameOf(mate)}s säng`,openBed,.6);
+ for(const[k,v]of MATE.g){const o=v.root.position;CAND(o.x,o.z,1.5,'Tillhör '+(mate?mpNameOf(mate):'en medspelare'),null,.72)}};
+
+/* ----- 3. Ground height: people stand on sidewalks instead of sinking into them ----- */
+const GHASH=new Map();
+function groundIndex(){if(GHASH.built)return;GHASH.built=true;for(const g of GROUNDS){const[x1,z1,x2,z2]=g;for(let gx=Math.floor(x1/10);gx<=Math.floor(x2/10);gx++)for(let gz=Math.floor(z1/10);gz<=Math.floor(z2/10);gz++){const k=gx+','+gz;if(!GHASH.has(k))GHASH.set(k,[]);GHASH.get(k).push(g)}}}
+function groundAt(x,z){groundIndex();const L=GHASH.get(Math.floor(x/10)+','+Math.floor(z/10));if(!L)return 0;let h=0;for(const g of L)if(x>=g[0]&&x<=g[2]&&z>=g[1]&&z<=g[3]&&g[4]>h)h=g[4];return h}
+let PG=0;function playerGround(dt){if(inCar||HIDDEN||(P.y||0)>.4){return PG}const t=groundAt(P.x,P.z);PG+=(t-PG)*Math.min(1,dt*12);return PG}
+const r12Sync=syncChars;
+syncChars=function(dt){r12Sync(dt);const lift=(ch,x,z)=>{if(!ch||!ch.g||ch.seated||ch.ragdoll||ch.ko)return;ch.g.position.y=groundAt(x,z)};
+ NPC.forEach(n=>{if(!n.inside)lift(n.ch,n.w.x,n.w.z)});PEDS.forEach(n=>{if(!n.inside)lift(n.ch,n.w.x,n.w.z)});COPS.forEach(c=>{if(!c.seated)lift(c.ch,c.x,c.z)})};
+/* no flying heads: only arms and legs can come off, and only from guns */
+const r12Shatter=shatterBodyPart;
+shatterBodyPart=function(t){const k=t&&t.part||'torso';if(k==='head'||k==='torso')return;return r12Shatter(t)};
+
+/* ----- 4. Arrests: the officer grabs and holds you instead of shoving you around ----- */
+const r12Dose=doseMul;
+doseMul=function(k){const v=r12Dose(k);if(k==='spd'&&POL.grab)return v*.55;return v};
+const r12Anim=animChar;
+animChar=function(c,speed,dt){r12Anim(c,speed,dt);if(c&&c.grabbing&&!c.ko){c.armL.rotation.x=c.armR.rotation.x=-1.35;c.armL.rotation.z=.25;c.armR.rotation.z=-.25;if(c.rig){c.rig.bones[6].rotation.x=c.rig.bones[9].rotation.x=-.25}}};
+const r12Grab=updateGrab;
+updateGrab=function(dt){const before=POL.grab&&POL.grab.c;r12Grab(dt);COPS.forEach(c=>{if(c.ch)c.ch.grabbing=!!(POL.grab&&POL.grab.c===c)});if(POL.grab){const c=POL.grab.c,d=Math.hypot(c.x-P.x,c.z-P.z);
+  if(d<1.45){const want=Math.atan2(-(c.x-P.x),-(c.z-P.z));let dy=want-cam.yaw;while(dy>Math.PI)dy-=Math.PI*2;while(dy<-Math.PI)dy+=Math.PI*2;cam.yaw+=dy*Math.min(1,dt*1.5)}
+  GRABFX.t=(GRABFX.t||0)+dt;if(GRABFX.t>.55){GRABFX.t=0;tone(140+Math.random()*40,.06,'square',.025)}}};
+const GRABFX={};
+$('#grabHUD')&&($('#grabHUD').title='Slå polisen (vänsterklick/Q) eller spring ifrån – du är långsam när du hålls fast');
+
+/* ----- 5. Planting view: closer camera, a work light, bigger particles, darker edges ----- */
+const FOCUSLIGHT=new THREE.PointLight(0xfff1d6,0,4,1.6);scene.add(FOCUSLIGHT);
+const r12FocusCam=focusCam;
+focusCam=function(c,dist,h,lookH){const r=r12FocusCam(c,dist*.72,h,lookH);r.camPos.y=lookH+(h-lookH)*.82;return r};
+const r12StartFocus=startFocus;
+startFocus=function(f){r12StartFocus(f);if(!FOCUS)return;FOCUS.fov0=camera.fov;camera.fov=Math.min(camera.fov,52);camera.updateProjectionMatrix();FOCUSLIGHT.position.copy(f.look||camera.position);FOCUSLIGHT.position.y+=.7;FOCUSLIGHT.intensity=1.35;const v=$('#focusVig');if(v)v.hidden=false};
+const r12EndFocus=endFocus;
+endFocus=function(){const f=FOCUS;r12EndFocus();if(f){camera.fov=f.fov0||SET.fov||camera.fov;camera.updateProjectionMatrix()}FOCUSLIGHT.intensity=0;const v=$('#focusVig');if(v)v.hidden=true};
+const r12Part=spawnPart;
+spawnPart=function(pos,mat,vel,floor){r12Part(pos,mat,vel,floor);if(FOCUS&&PARTS.length){const p=PARTS[PARTS.length-1];if(p&&p.m)p.m.scale.setScalar(1.9)}};
+/* pots light up their rim while you work on them */
+const RIMM=new THREE.MeshBasicMaterial({color:0xffe9a8,transparent:true,opacity:.55});
+const r12Upd=updateFocus;
+updateFocus=function(dt){r12Upd(dt);if(!FOCUS)return;FOCUSLIGHT.intensity=1.35;if(FOCUS.look){FOCUSLIGHT.position.set(FOCUS.look.x,FOCUS.look.y+.75,FOCUS.look.z+.15)}}
+const r12Soil=focusSoil,r12Seed=focusSeed,r12Water=focusWater,r12Add=focusAdd;
+function withRim(fn){return function(o,slot){const V=VISO[o.uid];let rim=null;if(V&&V.g){rim=new THREE.Mesh(new THREE.TorusGeometry(.34*(V.sc||1),.012,6,32),RIMM);rim.rotation.x=Math.PI/2;rim.position.y=V.soilY+.075;V.g.add(rim)}const r=fn(o,slot);if(FOCUS&&rim){const prev=FOCUS.cleanup;FOCUS.cleanup=function(){if(prev)prev.call(this);V.g.remove(rim)}}else if(rim)V.g.remove(rim);return r}}
+focusSoil=withRim(r12Soil);focusSeed=withRim(r12Seed);focusWater=withRim(r12Water);focusAdd=withRim(r12Add);
+
+/* ----- 6. Audio: music that follows the mood, footsteps, engine, siren, ambience ----- */
+const AUD={on:false,nodes:null,mood:'',next:0,step:0,engine:null,siren:null,amb:{t:0},foot:0};
+if(SET.music==null)SET.music=.5;
+function audCtx(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC}catch(e){return null}}
+function audInit(){const ac=audCtx();if(!ac||AUD.nodes)return;const music=ac.createGain(),sfxG=ac.createGain(),lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=4200;music.connect(lp).connect(ac.destination);sfxG.connect(ac.destination);AUD.nodes={music,sfx:sfxG,lp};audVol();AUD.next=ac.currentTime+.1}
+function audVol(){if(!AUD.nodes)return;const v=SET.vol==null?1:SET.vol;AUD.nodes.music.gain.value=.16*(SET.music==null?.5:SET.music)*v;AUD.nodes.sfx.gain.value=v}
+const mf=n=>440*Math.pow(2,(n-69)/12);
+const SONGS={
+ day:{bpm:84,swing:.08,ch:[[65,69,72,76],[64,67,71,74],[62,65,69,72],[60,64,67,71]],bass:[41,40,38,36],drum:'lofi'},
+ night:{bpm:70,swing:.05,ch:[[57,60,64,67],[53,57,60,64],[55,59,62,65],[52,55,59,64]],bass:[33,29,31,28],drum:'soft'},
+ chase:{bpm:128,swing:0,ch:[[62,65,69],[58,62,65],[60,64,67],[57,61,64]],bass:[38,34,36,33],drum:'drive'},
+ casino:{bpm:104,swing:.12,ch:[[62,65,69,72],[55,59,62,65],[60,64,67,71],[57,61,64,67]],bass:[38,43,36,45],drum:'jazz'},
+ menu:{bpm:76,swing:.06,ch:[[64,67,71,74],[60,64,67,71],[62,65,69,72],[59,62,65,69]],bass:[40,36,38,35],drum:'soft'}};
+function audNote(t,f,d,type,vol,dest,att=.01,cut){const ac=AC,o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+att);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+ if(cut){const f2=ac.createBiquadFilter();f2.type='lowpass';f2.frequency.value=cut;o.connect(f2).connect(g)}else o.connect(g);g.connect(dest);o.start(t);o.stop(t+d+.05)}
+function audNoise(t,d,vol,dest,type='highpass',freq=6000,q=.7){const ac=AC,s=ac.createBufferSource();s.buffer=noiseBuf();const f=ac.createBiquadFilter();f.type=type;f.frequency.value=freq;f.Q.value=q;const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(f).connect(g).connect(dest);s.start(t,Math.random()*1.5);s.stop(t+d+.02)}
+function audKick(t,vol,dest){const ac=AC,o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(130,t);o.frequency.exponentialRampToValueAtTime(42,t+.16);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+.28);o.connect(g).connect(dest);o.start(t);o.stop(t+.3)}
+function audMood(){if(!$('#start').hidden)return'menu';if(!S)return'menu';if(POL.W>0||POL.grab)return'chase';if(insideAny()==='casino')return'casino';const h=(S.min/60)%24;return h>=21||h<5?'night':'day'}
+function audMusic(){if(!AUD.nodes)return;const ac=AC,mood=audMood();if(mood!==AUD.mood){AUD.mood=mood;AUD.step=0;AUD.nodes.music.gain.cancelScheduledValues(ac.currentTime);AUD.nodes.music.gain.setValueAtTime(0,ac.currentTime);AUD.nodes.music.gain.linearRampToValueAtTime(.16*(SET.music==null?.5:SET.music)*(SET.vol==null?1:SET.vol),ac.currentTime+1.2);AUD.next=Math.max(AUD.next,ac.currentTime+.05)}
+ const song=SONGS[AUD.mood],sp=60/song.bpm/4,dest=AUD.nodes.music;if((SET.music||0)<=0.001){AUD.next=ac.currentTime+.1;return}
+ while(AUD.next<ac.currentTime+.25){const st=AUD.step%64,bar=Math.floor(st/16),b16=st%16,t=AUD.next+(b16%2?song.swing*sp*2:0);const ch=song.ch[bar];
+  if(b16===0)ch.forEach((n,i)=>audNote(t+i*.012,mf(n),sp*15,'triangle',.07,dest,.05,1800));
+  if(song.drum!=='drive'&&b16===8&&bar%2===1)ch.slice(1).forEach(n=>audNote(t,mf(n+12),sp*3,'sine',.03,dest,.01));
+  if(song.drum==='drive'){if(b16%2===0)audNote(t,mf(song.bass[bar]),sp*1.6,'sawtooth',.06,dest,.005,520)}else if(b16===0||b16===10)audNote(t,mf(song.bass[bar]),sp*5,'sine',.13,dest,.01);
+  const D=song.drum;if(D==='lofi'){if(b16===0||b16===7||b16===10)audKick(t,.32,dest);if(b16===4||b16===12)audNoise(t,.14,.12,dest,'bandpass',1800,.8);if(b16%2===0)audNoise(t,.04,.05,dest)}
+  else if(D==='soft'){if(b16===0)audKick(t,.2,dest);if(b16%4===2)audNoise(t,.05,.03,dest)}
+  else if(D==='drive'){if(b16%4===0)audKick(t,.42,dest);if(b16===4||b16===12)audNoise(t,.12,.18,dest,'bandpass',2000,.9);audNoise(t,.03,.04,dest)}
+  else if(D==='jazz'){if(b16%4===0)audNoise(t,.09,.045,dest,'highpass',7000);if(b16%4===3)audNoise(t,.05,.03,dest,'highpass',8000);if(b16===0||b16===8)audKick(t,.16,dest)}
+  AUD.next+=sp;AUD.step++}}
+function audEngine(){const ac=AC,want=inCar&&S&&S.car&&!S.car.destroyed;if(want&&!AUD.engine){const o=ac.createOscillator(),o2=ac.createOscillator(),f=ac.createBiquadFilter(),g=ac.createGain();o.type='sawtooth';o2.type='square';f.type='lowpass';f.frequency.value=700;g.gain.value=0;o.connect(f);o2.connect(f);f.connect(g).connect(AUD.nodes.sfx);o.start();o2.start();AUD.engine={o,o2,f,g}}
+ if(!want&&AUD.engine){const e=AUD.engine;e.g.gain.setTargetAtTime(0,ac.currentTime,.1);setTimeout(()=>{try{e.o.stop();e.o2.stop()}catch(_){}},400);AUD.engine=null}
+ if(AUD.engine){const b=S.car,D=typeof driveOf==='function'?driveOf(b):{spd:40},v=Math.abs((b.vx||0)*Math.sin(b.h)+(b.vz||0)*Math.cos(b.h)),gears=b.type==='bike'?6:5,k=v/D.spd,gi=Math.min(gears-1,Math.floor(Math.pow(k,.8)*gears)),inG=k*gears-gi,rpm=.25+.75*Math.min(1,inG);
+  const base=(b.type==='bike'?70:b.type==='sport'?55:42)*(1+rpm*1.6);AUD.engine.o.frequency.setTargetAtTime(base,ac.currentTime,.05);AUD.engine.o2.frequency.setTargetAtTime(base*.5,ac.currentTime,.05);AUD.engine.f.frequency.setTargetAtTime(400+rpm*1400*(Math.abs(DRIVE_INPUT.gas)>0?1:.6),ac.currentTime,.08);AUD.engine.g.gain.setTargetAtTime(.035+.03*rpm,ac.currentTime,.1)}}
+function audSiren(){const ac=AC;const pc=POL.car;const d=pc?Math.hypot(pc.x-P.x,pc.z-P.z):999;const want=POL.W>0&&pc&&d<120;
+ if(want&&!AUD.siren){const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';g.gain.value=0;o.connect(g).connect(AUD.nodes.sfx);o.start();AUD.siren={o,g}}
+ if(!want&&AUD.siren){const s=AUD.siren;s.g.gain.setTargetAtTime(0,ac.currentTime,.2);setTimeout(()=>{try{s.o.stop()}catch(_){}},800);AUD.siren=null}
+ if(AUD.siren){const hi=Math.floor(ac.currentTime*1.5)%2;AUD.siren.o.frequency.setTargetAtTime(hi?988:784,ac.currentTime,.01);AUD.siren.g.gain.setTargetAtTime(.05*Math.max(0,1-d/120),ac.currentTime,.2)}}
+function audSteps(dt){if(!S||inCar||FOCUS||HIDDEN||MP.ride||(P.y||0)>.05||!$('#start').hidden)return;const sp=P.speed||0;if(sp<.6){AUD.foot=0;return}AUD.foot+=dt*sp*.52;if(AUD.foot>=1){AUD.foot=0;const t=AC.currentTime,inside=insideAny();
+ audNoise(t,.07,(P.crouch?.05:sp>5?.16:.1),AUD.nodes.sfx,'bandpass',inside?900:groundAt(P.x,P.z)>.1?1400:700,1.1);audKick(t,P.crouch?.02:.05,AUD.nodes.sfx)}}
+function audAmb(dt){if(!S||!$('#start').hidden||insideAny())return;AUD.amb.t-=dt;if(AUD.amb.t>0)return;const h=(S.min/60)%24,night=h>=21||h<5,t=AC.currentTime,rain=typeof rainAmt==='number'?rainAmt:0;
+ if(rain>.3){AUD.amb.t=2;return}
+ if(night){AUD.amb.t=.9+Math.random()*1.5;for(let i=0;i<3;i++)audNote(t+i*.07,4200+Math.random()*300,.05,'sine',.006,AUD.nodes.sfx,.005)}
+ else{AUD.amb.t=2+Math.random()*5;const f=2200+Math.random()*1800;const n=2+Math.floor(Math.random()*4);for(let i=0;i<n;i++){const o=AC.createOscillator(),g=AC.createGain(),tt=t+i*.13;o.type='sine';o.frequency.setValueAtTime(f,tt);o.frequency.exponentialRampToValueAtTime(f*1.35,tt+.07);g.gain.setValueAtTime(0,tt);g.gain.linearRampToValueAtTime(.012,tt+.01);g.gain.exponentialRampToValueAtTime(.0001,tt+.1);o.connect(g).connect(AUD.nodes.sfx);o.start(tt);o.stop(tt+.12)}}}
+function audioTick(dt){if(!AC||!AUD.nodes)return;try{audMusic();audEngine();audSiren();audSteps(dt);audAmb(dt)}catch(e){}}
+addEventListener('pointerdown',()=>{audInit()},true);addEventListener('keydown',()=>{audInit()},true);
+const r12Cam=placeCamera;placeCamera=function(dt){r12Cam(dt);try{mateStations()}catch(e){}audioTick(dt)};
+/* pouring sounds while planting, a ping when a text arrives, door sounds */
+const POURS={};
+function pourSound(kind,on){if(!AUD.nodes)return;const ac=AC;let s=POURS[kind];if(on&&!s){const src=ac.createBufferSource();src.buffer=noiseBuf();src.loop=true;const f=ac.createBiquadFilter();f.type=kind==='water'?'bandpass':'lowpass';f.frequency.value=kind==='water'?1300:500;f.Q.value=kind==='water'?1.4:.6;const g=ac.createGain();g.gain.value=0;src.connect(f).connect(g).connect(AUD.nodes.sfx);src.start();s=POURS[kind]={src,g}}
+ if(s){s.g.gain.setTargetAtTime(on?(kind==='water'?.07:.09):0,ac.currentTime,.05);if(!on&&!FOCUS){try{s.src.stop()}catch(_){}delete POURS[kind]}}}
+const r12Upd2=updateFocus;
+updateFocus=function(dt){r12Upd2(dt);const f=FOCUS;const t=f&&f.title||'';pourSound('water',!!f&&mDown&&/Vattna/.test(t));pourSound('soil',!!f&&mDown&&/(Häll i jord|Tillsätt)/.test(t))};
+const r12End2=endFocus;endFocus=function(){r12End2();pourSound('water',false);pourSound('soil',false)};
+const r12Chat=chat;
+chat=function(who,text,oid,me){const r=r12Chat(who,text,oid,me);if(!me&&AUD.nodes&&S&&$('#start').hidden){const t=AC.currentTime;audNote(t,1568,.12,'sine',.05,AUD.nodes.sfx,.005);audNote(t+.11,2093,.16,'sine',.045,AUD.nodes.sfx,.005)}return r};
+/* settings: music volume, fullscreen */
+addEventListener('input',e=>{const t=e.target;if(t&&t.id==='setM'){SET.music=+t.value;audVol();try{localStorage.setItem('glimm_set',JSON.stringify(SET))}catch(_){}}if(t&&t.id==='setV')audVol()},true);
+(function r12Dom(){try{const st=document.createElement('style');st.textContent=`#focusVig{position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at 50% 55%,transparent 38%,rgba(10,10,18,.55) 100%)}`;document.head.appendChild(st);const v=document.createElement('div');v.id='focusVig';v.hidden=true;($('#app')||document.body).appendChild(v)}catch(e){}})();
 </script>
 </body></html>
