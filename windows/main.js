@@ -41,7 +41,7 @@ const splash = text => 'data:text/html;charset=utf-8,' + encodeURIComponent(`<!d
 
 async function createWindow() {
   const win = new BrowserWindow({
-    width: 1366, height: 820, minWidth: 960, minHeight: 600, backgroundColor: '#141724',
+    width: 1366, height: 820, minWidth: 960, minHeight: 600, backgroundColor: '#141724', fullscreen: true,
     title: 'Doskungen i Västmyra', icon: path.join(BUNDLED, 'icon.png'), autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, sandbox: true, backgroundThrottling: false }
   });

@@ -2066,7 +2066,7 @@ function focusSoil(o,slot){const{p,V,c}=potCtx(o),it=S.inv[slot];if(!it)return;c
  startFocus(Object.assign(focusCam(c,.8,1.5,.45),{title:'Häll i jord',hint:'Håll vänster musknapp för att luta säcken. Sikta öppningen över krukan.',
   init(){scene.add(bag);bag.position.set(c.x,1.05,c.z+.3);V.focus=true;V.soil.visible=true;V.soil.material=mat;V.soil.position.y=V.soilY-.18},
   update(dt){const q=onPlane(1.05);if(q)bag.position.lerp(q,.3);bag.rotation.z=lerp(bag.rotation.z,mDown&&!done?2.2:0,dt*7);
-   if(bag.rotation.z>1.3&&!done){const mouth=bag.localToWorld(new THREE.Vector3(0,.22,0));const over=Math.hypot(mouth.x-c.x,mouth.z-c.z)<.3;for(let n=0;n<3;n++)spawnPart(mouth,mat,null,over?V.soilY-.18+.18*fill:.08);if(over)fill=Math.min(1,fill+dt*.5)}
+   if(bag.rotation.z>1.3&&!done){const mouth=bag.localToWorld(new THREE.Vector3(0,.22,0));const over=Math.hypot(mouth.x-c.x,mouth.z-c.z)<.3;for(let n=0;n<3;n++)spawnPart(mouth,mat,null,over?(V.pot3?V.soilLevel:V.soilY-.18+.18*fill):.08);if(over)fill=Math.min(1,fill+dt*.5)}
    V.soil.position.y=V.soilY-.18+.18*fill;setBar(fill,Math.round(fill*100)+' %');
    if(fill>=1&&!done){done=FOCUS.t;if(S.inv[slot]&&S.inv[slot].id===itemId&&invTake(itemId,1)){p.soil=k;p.uses=SOILS[k].uses;toast('Krukan är full med '+SOILS[k].n.toLowerCase(),'cash')}}
    if(done&&FOCUS.t-done>.5)endFocus()},
@@ -2080,7 +2080,7 @@ function focusSeed(o,slot){const{p,V,c}=potCtx(o),it=S.inv[slot];if(!it)return;c
   down(){if(!open){open=true;cap.visible=false;spawnPart(vial.localToWorld(new THREE.Vector3(0,.09,0)),M(0xe63946),new THREE.Vector3(.4,1.2,.2),0);$('#fD').textContent='Håll röret över hålet i jorden och klicka.';return}
    if(!dropped){const d=Math.hypot(vial.position.x-c.x,vial.position.z-c.z);if(d<.09){dropped=FOCUS.t;vial.rotation.z=Math.PI;const w=seed.getWorldPosition(new THREE.Vector3());vial.remove(seed);scene.add(seed);seed.position.copy(w);fallY=w.y}else toast('Lite närmare hålet!')}},
   update(dt){if(!dropped){const q=onPlane(.85);if(q)vial.position.lerp(q,.3);setBar(open?.5:0,open?'Locket av':'')}
-   else{seed.position.y=Math.max(V.soilY+.02,seed.position.y-dt*1.5);seed.position.x=lerp(seed.position.x,c.x,.2);seed.position.z=lerp(seed.position.z,c.z,.2);setBar(1,'Planterat');
+   else{seed.position.y=Math.max(V.soilY+.02-(V.pot3?.028*(V.sc||1):0),seed.position.y-dt*1.5);seed.position.x=lerp(seed.position.x,c.x,.2);seed.position.z=lerp(seed.position.z,c.z,.2);setBar(1,'Planterat');
     if(FOCUS.t-dropped>.7&&!p.seed){if(S.inv[slot]&&S.inv[slot].id===itemId&&invTake(itemId,1)){const so=SOILS[p.soil];p.seed=k;p.prog=0;p.n=ri(so.y[0],so.y[1])+(p.adds.godsel?2:0)+(p.type==='kruka2'?2:0);S.stats.planted++;toast('Fröet är planterat. Glöm inte vattna!','cash')}endFocus()}}},
   cleanup(){scene.remove(vial);scene.remove(seed);V.focus=false;V.hole.visible=false}}))}
 
@@ -4101,11 +4101,11 @@ focusSoil=function(o,slot){const{p,V,c}=potCtx(o),it=S.inv[slot];if(!it)return;c
  const bag=new THREE.Group(),mat=M(SOILS[k].col),body=new THREE.Group();bag.add(body);rbox(.3,.4,.15,.03,mat,0,0,0,body,false);box(.18,.11,.155,0xf4e3c1,0,-.02,0,body,false);box(.26,.04,.12,0x2a1a0a,0,.2,0,bag,false);
  const lumps=new THREE.Group();let fill=0,done=0,spill=0;
  startFocus(Object.assign(focusCam(c,.8,1.5,.45),{title:'Häll i jord',hint:'Håll vänster musknapp för att luta säcken. Håll öppningen över krukan, annars hamnar jorden på golvet.',
-  init(){scene.add(bag);bag.position.set(c.x,1.05,c.z+.3);V.focus=true;V.soil.visible=true;V.soil.material=mat;V.soil.position.y=V.soilY-.18;V.g.add(lumps)},
+  init(){scene.add(bag);bag.position.set(c.x,1.05,c.z+.3);V.focus=true;V.soil.visible=true;V.soil.material=mat;if(V.pot3){V.pourSoil=k;potSetFill(V,0);V.heap=0}else V.soil.position.y=V.soilY-.18;V.g.add(lumps)},
   update(dt){const q=onPlane(1.05);if(q)bag.position.lerp(q,.3);bag.rotation.z=lerp(bag.rotation.z,mDown&&!done?2.2:0,dt*7);
-   if(bag.rotation.z>1.3&&!done){const mouth=bag.localToWorld(new THREE.Vector3(0,.22,0));const over=Math.hypot(mouth.x-c.x,mouth.z-c.z)<.3*(V.sc||1);for(let n=0;n<3;n++)spawnPart(mouth,mat,null,over?V.soilY-.18+.18*fill:.08);
+   if(bag.rotation.z>1.3&&!done){const mouth=bag.localToWorld(new THREE.Vector3(0,.22,0));const over=Math.hypot(mouth.x-c.x,mouth.z-c.z)<.3*(V.sc||1);for(let n=0;n<3;n++)spawnPart(mouth,mat,null,over?(V.pot3?V.soilLevel:V.soilY-.18+.18*fill):.08);
     if(over){fill=Math.min(1,fill+dt*.5);if(rand()<dt*14&&lumps.children.length<30){const a=rand()*6.28,d=Math.sqrt(rand())*.24*(V.sc||1);const l=box(.03,.018,.03,mat,Math.cos(a)*d,0,Math.sin(a)*d,lumps,false);l.rotation.y=rand()*3}}else{spill+=dt;if(spill>.8){spill=0;toast('Jorden hamnar bredvid – sikta över krukan!','bad')}}}
-   body.scale.y=1-.45*fill;body.position.y=-.1*fill;V.soil.position.y=V.soilY-.18+.18*fill;lumps.position.y=V.soil.position.y+.02;setBar(fill,Math.round(fill*100)+' %');
+   body.scale.y=1-.45*fill;body.position.y=-.1*fill;if(V.pot3){potSetFill(V,fill);V.heap=fill>0&&fill<1?.35+.4*Math.sin(Math.min(1,fill)*Math.PI):0;lumps.position.y=V.soilLevel+.004}else{V.soil.position.y=V.soilY-.18+.18*fill;lumps.position.y=V.soil.position.y+.02}setBar(fill,Math.round(fill*100)+' %');
    if(fill>=1&&!done){done=FOCUS.t||.001;if(S.inv[slot]&&S.inv[slot].id===itemId&&invTake(itemId,1)){p.soil=k;p.uses=SOILS[k].uses;p.dryMin=0;toast('Krukan är full med '+SOILS[k].n.toLowerCase()+'. Vattna och plantera ett frö.','cash')}}
    if(done&&FOCUS.t-done>.5)endFocus()},
   cleanup(){scene.remove(bag);V.g.remove(lumps);V.focus=false}}))};
@@ -4122,7 +4122,7 @@ focusSeed=function(o,slot){const{p,V,c}=potCtx(o),it=S.inv[slot];if(!it)return;c
      const a=Math.atan2(q.z-c.z,q.x-c.x);for(let j=0;j<3;j++){const l=box(.03,.016,.03,soilM,Math.cos(a+j*.4)*.03,0,Math.sin(a+j*.4)*.03,mound,false);l.rotation.y=rand()*3}V.hole.scale.setScalar(Math.max(.05,1-pats/3));samplePlay('plant',.24);
      if(pats>=3){done=FOCUS.t||.001;seed.visible=false;V.hole.visible=false;if(S.inv[slot]&&S.inv[slot].id===itemId&&invTake(itemId,1)){const so=SOILS[p.soil];p.seed=k;p.prog=0;p.dryMin=0;p.dryCut=0;p.n=ri(so.y[0],so.y[1])+(p.adds.godsel?2:0)+(p.type==='kruka2'?2:0);S.stats.planted++;toast(p.water>0?'Fröet är planterat och jorden är fuktig. Bra!':'Fröet är planterat. Glöm inte vattna!','cash')}}}}},
   update(dt){if(!dropped){const q=onPlane(.85);if(q)vial.position.lerp(q,.3);setBar(open?.33:0,open?'Locket av':'')}
-   else if(!landed){seed.position.y=Math.max(V.soilY+.02,seed.position.y-dt*1.5);seed.position.x=lerp(seed.position.x,c.x,.2);seed.position.z=lerp(seed.position.z,c.z,.2);if(seed.position.y<=V.soilY+.021){landed=true;$('#fD').textContent='Klicka på jorden runt hålet för att täcka fröet.';vial.visible=false}}
+   else if(!landed){seed.position.y=Math.max(V.soilY+.02-(V.pot3?.028*(V.sc||1):0),seed.position.y-dt*1.5);seed.position.x=lerp(seed.position.x,c.x,.2);seed.position.z=lerp(seed.position.z,c.z,.2);if(seed.position.y<=V.soilY+.021-(V.pot3?.028*(V.sc||1):0)){landed=true;$('#fD').textContent='Klicka på jorden runt hålet för att täcka fröet.';vial.visible=false}}
    else setBar(.4+.6*pats/3,done?'Planterat':`Täck fröet ${pats}/3`);
    if(done&&FOCUS.t-done>.6)endFocus()},
   cleanup(){scene.remove(vial);scene.remove(seed);V.g.remove(mound);V.focus=false;V.hole.visible=false;V.hole.scale.setScalar(1)}}))};
@@ -5157,13 +5157,347 @@ mapMarkers=function(){const a=v2Markers();if(MP.on)for(const o of mpOthers()){co
 (function v2Css(){try{const st=document.createElement('style');st.textContent=`body:not(.onmenu) #toasts{top:calc(env(safe-area-inset-top,0px) + 212px)}body:not(.onmenu) #creativeBadge{left:220px}
 @media(max-width:650px){body:not(.onmenu) #toasts{top:calc(env(safe-area-inset-top,0px) + 142px)}body:not(.onmenu) #creativeBadge{left:150px}}`;document.head.appendChild(st)}catch(e){}})();
 /* version check for downloaded copies: an HTML file on disk cannot update itself, so the menu points to the newest version */
-const GAME_VERSION='2026.10.13-1';
+const GAME_VERSION='2026.10.13-2';
 const VERSION_URL='https://biktorng.github.io/Doskungen/version.json',ONLINE_URL='https://biktorng.github.io/Doskungen/spel/';
 let NEWER=null;
 (function checkVersion(){try{const local=location.protocol==='file:'&&!/Electron/i.test(navigator.userAgent);if(!local||!window.fetch)return;
  fetch(VERSION_URL+'?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(v=>{if(v&&v.version&&v.version!==GAME_VERSION){NEWER=v;if(!$('#start').hidden)renderMenu()}}).catch(()=>{})}catch(e){}})();
 const v2Menu=renderMenu;
 renderMenu=function(){v2Menu();{const f0=$('#startInner').querySelector('.mfoot');if(f0&&!f0.querySelector('.ver'))f0.insertAdjacentHTML('beforeend',`<span class="ver"> · Version ${esc(GAME_VERSION)}</span>`)}if(!NEWER)return;const f=$('#startInner').querySelector('.mfoot');if(f&&!f.querySelector('.newver'))f.insertAdjacentHTML('beforeend',`<div class="newver" style="margin-top:8px;opacity:1;font-size:14px;color:#ffd166">Version ${esc(NEWER.version)} finns. <a href="${ONLINE_URL}" target="_blank" rel="noopener" style="color:#6ef2c0">Spela den senaste online</a> eller ladda ned den nya filen från samma sida.</div>`)};
+
+
+/* ---------- Traffic that keeps flowing ----------
+   Cars follow lanes on a road graph built from the road surfaces: right-hand lanes, smooth curves
+   through junctions, one car at a time in each junction, distance keeping and overtaking of things
+   that stand still. Undisturbed cars run "on rails" (velocity set from the lane), so they cannot
+   drift onto sidewalks. After a crash they brake, then rejoin the nearest lane or quietly respawn
+   out of sight. Parked cars that stood in a lane are moved to the curb. */
+const TG={nodes:[],edges:[],built:false,LANE:1.8,CURB:4.45,JR:9.4};
+function tgBuild(){if(TG.built)return TG;TG.built=true;const roads=(typeof CITYSURFACE!=='undefined'?CITYSURFACE.roads:[]);
+ const lines={h:[],v:[]};for(const r of roads){const w=r.x2-r.x1,d=r.z2-r.z1;if(w>=d)lines.h.push({c:Math.round((r.z1+r.z2)/2),a:r.x1,b:r.x2});else lines.v.push({c:Math.round((r.x1+r.x2)/2),a:r.z1,b:r.z2})}
+ const merge=L=>{L.sort((p,q)=>p.c-q.c||p.a-q.a);const out=[];for(const l of L){const o=out.find(m=>Math.abs(m.c-l.c)<1.5&&l.a<=m.b+1.5&&l.b>=m.a-1.5);if(o){o.a=Math.min(o.a,l.a);o.b=Math.max(o.b,l.b)}else out.push({...l})}return out};
+ lines.h=merge(lines.h);lines.v=merge(lines.v);
+ const key=(x,z)=>Math.round(x)+','+Math.round(z),byKey=new Map();
+ const node=(x,z)=>{const k=key(x,z);if(!byKey.has(k)){const n={id:TG.nodes.length,x,z,adj:[],res:null,resAt:0};TG.nodes.push(n);byKey.set(k,n)}return byKey.get(k)};
+ for(const h of lines.h)for(const v of lines.v)if(v.c>=h.a-.5&&v.c<=h.b+.5&&h.c>=v.a-.5&&h.c<=v.b+.5)node(v.c,h.c);
+ const solidAt=(x,z,r)=>COL.some(c=>!c.off&&x>c.x1-r&&x<c.x2+r&&z>c.z1-r&&z<c.z2+r);
+ const link=(a,b)=>{const L=Math.hypot(b.x-a.x,b.z-a.z),ux=(b.x-a.x)/L,uz=(b.z-a.z)/L;
+  for(let s=0;s<=L;s+=1.5)for(const o of[-TG.LANE,TG.LANE]){const x=a.x+ux*s-uz*o,z=a.z+uz*s+ux*o;if(solidAt(x,z,1.15))return}
+  a.adj.push(b);b.adj.push(a);TG.edges.push([a,b])};
+ for(const h of lines.h){const ns=TG.nodes.filter(n=>Math.abs(n.z-h.c)<.6&&n.x>=h.a-.5&&n.x<=h.b+.5).sort((p,q)=>p.x-q.x);for(let i=0;i+1<ns.length;i++)link(ns[i],ns[i+1])}
+ for(const v of lines.v){const ns=TG.nodes.filter(n=>Math.abs(n.x-v.c)<.6&&n.z>=v.a-.5&&n.z<=v.b+.5).sort((p,q)=>p.z-q.z);for(let i=0;i+1<ns.length;i++)link(ns[i],ns[i+1])}
+ // dead ends would need U-turns: prune them
+ let changed=true;while(changed){changed=false;for(const n of TG.nodes)if(!n.dead&&n.adj.length<2){n.dead=true;changed=true;for(const m of n.adj)m.adj=m.adj.filter(q=>q!==n);n.adj=[]}}
+ TG.fo=!!(WORLD.fenceCol&&WORLD.fenceCol.off);TG.nodes=TG.nodes.filter(n=>!n.dead);TG.edges=TG.edges.filter(([a,b])=>!a.dead&&!b.dead);return TG}
+/* lane geometry */
+function tgLane(a,b){const L=Math.hypot(b.x-a.x,b.z-a.z),ux=(b.x-a.x)/L,uz=(b.z-a.z)/L,rx=-uz,rz=ux,o=TG.LANE,R=TG.JR;
+ return{ux,uz,rx,rz,sx:a.x+ux*R+rx*o,sz:a.z+uz*R+rz*o,ex:b.x-ux*R+rx*o,ez:b.z-uz*R+rz*o,L:L-2*R}}
+function tgPushStraight(t,a,b,from=0){const g=tgLane(a,b);for(let s=Math.max(0,from);s<=g.L+.01;s+=2.5){const k=Math.min(s,g.L);t.path.push({x:g.sx+g.ux*k,z:g.sz+g.uz*k,rx:g.rx,rz:g.rz,lim:99,node:null,straight:true});if(k>=g.L)break}
+ const last=t.path[t.path.length-1];if(Math.hypot(last.x-g.ex,last.z-g.ez)>.3)t.path.push({x:g.ex,z:g.ez,rx:g.rx,rz:g.rz,lim:99,node:null,straight:true})}
+function tgPushTurn(t,a,b,c){const g1=tgLane(a,b),g2=tgLane(b,c),cross=g1.ux*g2.uz-g1.uz*g2.ux,dot=g1.ux*g2.ux+g1.uz*g2.uz;
+ // control point: where the two lane lines meet (straight: midpoint)
+ let cx,cz;if(Math.abs(cross)<.2){cx=(g1.ex+g2.sx)/2;cz=(g1.ez+g2.sz)/2}else{const den=g1.ux*g2.uz-g1.uz*g2.ux,dx=g2.sx-g1.ex,dz=g2.sz-g1.ez,s=(dx*g2.uz-dz*g2.ux)/den;cx=g1.ex+g1.ux*s;cz=g1.ez+g1.uz*s}
+ const right=cross>.2,lim=dot>.8?99:right?5:6.5,n=8;
+ for(let i=1;i<=n;i++){const u=i/n,v=1-u,x=v*v*g1.ex+2*v*u*cx+u*u*g2.sx,z=v*v*g1.ez+2*v*u*cz+u*u*g2.sz,rx=lerp(g1.rx,g2.rx,u),rz=lerp(g1.rz,g2.rz,u);t.path.push({x,z,rx,rz,lim,node:b,straight:false})}}
+function tgChooseNext(t,prev,cur){const opts=cur.adj.filter(n=>n!==prev);if(!opts.length)return prev;
+ // prefer going straight a bit, never stay stuck on one loop
+ const r=Math.random(),dx=cur.x-prev.x,dz=cur.z-prev.z;const straight=opts.find(n=>Math.abs((n.x-cur.x)*dz-(n.z-cur.z)*dx)<1);if(straight&&r<.45)return straight;return opts[Math.floor(Math.random()*opts.length)]}
+function tgExtend(t){let guard=0;while(t.path.length-t.pi<40&&guard++<4){const a=t.na,b=t.nb,c=tgChooseNext(t,a,b);tgPushTurn(t,a,b,c);tgPushStraight(t,b,c);t.na=b;t.nb=c}
+ if(t.pi>60){const cut=t.pi-2;t.path.splice(0,cut);t.pi=2;if(t.hold)t.holdIdx-=cut}}
+/* put a car on the nearest lane (optionally away from a point) */
+function tgPlace(t,x,z,h,snap=false){tgBuild();let best=null,bd=1e9;for(const[a,b]of TG.edges)for(const[p,q]of[[a,b],[b,a]]){const g=tgLane(p,q);if(g.L<4)continue;const s=clamp((x-g.sx)*g.ux+(z-g.sz)*g.uz,0,g.L),px=g.sx+g.ux*s,pz=g.sz+g.uz*s;let d=Math.hypot(px-x,pz-z);if(h!=null)d+=Math.abs(angDiff(h,Math.atan2(g.ux,g.uz)))*4;if(d<bd){bd=d;best={p,q,s,px,pz,g}}}
+ if(!best)return false;tgRelease(t);t.path=[];t.pi=0;t.na=best.p;t.nb=best.q;tgPushStraight(t,best.p,best.q,best.s);tgExtend(t);
+ if(snap){t.x=best.px;t.z=best.pz;t.h=Math.atan2(best.g.ux,best.g.uz);t.vx=t.vz=0;t.roll=t.pitch=t.rollV=t.pitchV=t.yawV=0;t.y=0;t.vy=0}
+ t.rail=true;if(snap)t.lost=0;t.stall=0;t.shift=0;t.passing=0;return true}
+function tgRelease(t){for(const n of TG.nodes)if(n.res===t)n.res=null;t.hold=null}
+/* traffic cars: a few more, also through Gropen */
+const spawnTrafficTG=spawnTraffic;
+spawnTraffic=function(){spawnTrafficTG();tgBuild();const extra=[[0x9c6644,'Brun skåpbil','suv'],[0x3d5a80,'Mörkblå kombi','skrot'],[0xc9c9c9,'Silver sedan','sport']];
+ extra.forEach(([col,name,type],m)=>{const k=TRAF.length,car=makeCar(col,type);scene.add(car.g);const t={id:k,col,name,type,car,i:0,j:0,ni:0,nj:0,x:0,z:0,h:0,v:0,taken:false,wait:0};car.g.position.set(0,0,0);TRAF.push(t);t.driver=makeTrafficDriver(t,k)});
+ const spots=[[110,2],[150,48],[52,148],[202,120],[-90,80],[-140,120],[60,198],[148,180],[-60,98]];
+ TRAF.forEach((t,k)=>{bindVehicle(t,t.car);if(k===0)tgPlace(t,t.x,t.z,t.h,true);else{const s=spots[(k-1)%spots.length];tgPlace(t,s[0],s[1],null,true)}t.car.g.position.set(t.x,0,t.z);t.car.g.rotation.y=t.h})};
+/* obstacles that can block a lane */
+function tgObstacles(t){const o=[];if(!inCar&&!HIDDEN)o.push({x:P.x,z:P.z,r:.45,kind:'player',still:Math.hypot(P.vx||0,P.vz||0)<.5});
+ for(const n of[...NPC,...PEDS,...(typeof DRIVERS!=='undefined'?[]:[])])if(!n.inside&&!n.ko&&!n.seated&&n.w)o.push({x:n.w.x,z:n.w.z,r:.4,kind:'ped',still:(n.w.speed||0)<.3});
+ for(const c of COPS)if(!c.ko&&!c.seated&&!c.inside)o.push({x:c.x,z:c.z,r:.4,kind:'ped',still:(c.speed||0)<.3});
+ for(const b of vehicleBodies())if(b!==t){const q=vehicleSpec(b),moving=Math.hypot(b.vx||0,b.vz||0)>1;const traffic=TRAF.includes(b)&&b.driver?.seated&&!b.disabled&&!b.destroyed;
+  // a car is a chain of circles along its length
+  const sn=Math.sin(b.h||0),cs=Math.cos(b.h||0);for(const f of[-q.hl*.6,0,q.hl*.6])o.push({x:b.x+sn*f,z:b.z+cs*f,r:q.hw,kind:traffic?'traffic':'car',still:!moving&&!traffic,ref:b})}
+ if(MP.on)for(const m of mpOthers()){const p=m.pres&&m.pres.p;if(p&&!p[6])o.push({x:p[0],z:p[1],r:.45,kind:'player',still:false})}
+ return o}
+let tgHonkT=0;
+function tgDrive(t,dt,obs){const q=vehicleSpec(t),path=t.path;
+ // advance the projection index
+ {let bi=t.pi,bd=1e9;for(let i=t.pi;i<Math.min(path.length-1,t.pi+14);i++){const a=path[i],b=path[i+1],sx=b.x-a.x,sz=b.z-a.z,L2=sx*sx+sz*sz||1,u=clamp(((t.x-a.x)*sx+(t.z-a.z)*sz)/L2,0,1),d=Math.hypot(a.x+sx*u-t.x,a.z+sz*u-t.z);if(d<bd-.01){bd=d;bi=i}}t.pi=bi;
+  const a=path[t.pi],b=path[t.pi+1];if(b){const sx=b.x-a.x,sz=b.z-a.z,L2=sx*sx+sz*sz||1;if(((t.x-a.x)*sx+(t.z-a.z)*sz)/L2>=1)t.pi++}}
+ tgExtend(t);
+ const a=path[t.pi],b=path[Math.min(t.pi+1,path.length-1)],sx=b.x-a.x,sz=b.z-a.z,L2=sx*sx+sz*sz||1,u=clamp(((t.x-a.x)*sx+(t.z-a.z)*sz)/L2,0,1),px=a.x+sx*u,pz=a.z+sz*u,lat=Math.hypot(t.x-px,t.z-pz);
+ // release junctions we have left
+ if(t.hold&&t.pi>t.holdIdx+1){if(t.hold.res===t)t.hold.res=null;t.hold=null}
+ // look ahead: speed limits, junction reservation, obstacles
+ const sp=Math.hypot(t.vx||0,t.vz||0),look=Math.max(14,sp*sp/7+10);let target=Math.min(13,q.spd*.62),dist=0,prev={x:t.x,z:t.z},blocker=null,stopAt=1e9;
+ const sh=t.shift||0;
+ for(let i=t.pi+1;i<path.length&&dist<look;i++){const p=path[i],x=p.x-p.rx*sh,z=p.z-p.rz*sh;dist+=Math.hypot(x-prev.x,z-prev.z);prev={x,z};
+  if(p.lim<99)target=Math.min(target,Math.sqrt(p.lim*p.lim+2*4*Math.max(0,dist-2)));
+  if(p.node){const n=p.node;if(n.res&&n.res!==t&&(trafficUnavailable(n.res)||!n.res.rail||n.res.hold!==n||physicsClock-n.resAt>25))n.res=null;
+   if(!n.res||n.res===t){if(dist<12&&n.res!==t){if(t.hold&&t.hold!==n&&TG.nodes.includes(t.hold)&&t.hold.res===t)t.hold.res=null;n.res=t;n.resAt=physicsClock;t.hold=n;let j=i;while(j+1<path.length&&path[j+1].node===n)j++;t.holdIdx=j}}else{stopAt=Math.min(stopAt,dist-1.5);blocker=blocker||{kind:'junction'};break}}
+  for(const o of obs){if(Math.abs(o.x-x)>4||Math.abs(o.z-z)>4)continue;if(o.kind==='ped'&&t.pedCreep>0)continue;const d=Math.hypot(o.x-x,o.z-z);if(d<o.r+q.hw+(o.kind==='car'||o.kind==='traffic'?.02:.12)){const gap=dist-q.hl-o.r-.8;if(gap<stopAt){stopAt=gap;blocker=o}}}
+  if(stopAt<dist)break}
+ if(stopAt<1e9)target=Math.min(target,Math.sqrt(2*6*Math.max(0,stopAt-.5)));
+ // a pedestrian that will not move out of the way: creep forward so they can step aside
+ t.pedCreep=Math.max(0,(t.pedCreep||0)-dt);if(blocker&&blocker.kind==='ped'&&target<.5)t.pedWait=(t.pedWait||0)+dt;else t.pedWait=0;if(t.pedWait>3){t.pedWait=0;t.pedCreep=4}if(t.pedCreep>0)target=Math.min(target,1.8);
+ if(t.wait>0)target=0;
+ // overtake something that stands still in our lane (never in a junction)
+ const onStraight=path[t.pi]?.straight&&path[Math.min(t.pi+4,path.length-1)]?.straight;
+ if(blocker&&blocker.still&&target<1&&blocker.kind!=='junction'){t.stall+=dt}else if(!t.passing)t.stall=Math.max(0,t.stall-dt*2);
+ if(blocker&&blocker.kind==='player'&&target<1&&sp<.5){tgHonkT-=dt;if(tgHonkT<=0&&Math.hypot(P.x-t.x,P.z-t.z)<14){tgHonkT=3.5;try{tone(330,.35,'square',.03*SET.vol,320);setTimeout(()=>tone(392,.3,'square',.03*SET.vol,380),120)}catch(e){}}}
+ if(t.stall>2.2&&onStraight&&!t.passing){// only if the oncoming lane is free
+  const free=!obs.some(o=>o.kind==='traffic'&&Math.hypot(o.x-t.x,o.z-t.z)<26&&((o.x-t.x)*Math.sin(t.h)+(o.z-t.z)*Math.cos(t.h))>-3&&o.ref&&Math.cos(angDiff(t.h,o.ref.h||0))<0);
+  if(free){t.passing=1;t.passT=0}}
+ if(t.passing){t.passT+=dt;t.shift=Math.min(TG.LANE*2,(t.shift||0)+dt*2.2);const ahead=obs.some(o=>o.still&&((o.x-t.x)*Math.sin(t.h)+(o.z-t.z)*Math.cos(t.h))>-4&&((o.x-t.x)*Math.sin(t.h)+(o.z-t.z)*Math.cos(t.h))<9&&Math.abs((o.x-t.x)*Math.cos(t.h)-(o.z-t.z)*Math.sin(t.h))<4);
+  const oncoming=obs.some(o=>o.kind==='traffic'&&Math.hypot(o.x-t.x,o.z-t.z)<12&&((o.x-t.x)*Math.sin(t.h)+(o.z-t.z)*Math.cos(t.h))>0);
+  if((!ahead&&t.passT>1.5)||t.passT>9||oncoming||!onStraight){t.passing=0;t.stall=0}}
+ else if(t.shift>0)t.shift=Math.max(0,t.shift-dt*2.2);
+ if(t.passing)target=Math.max(target,Math.min(5,stopAt>6?5:0));
+ // steer: pure pursuit on the (shifted) lane
+ let need=Math.max(3,sp*.45+2.2),acc=0,lx=px,lz=pz;for(let i=t.pi+1;i<path.length;i++){const p=path[i],x=p.x-p.rx*t.shift,z=p.z-p.rz*t.shift,d=Math.hypot(x-lx,z-lz);if(acc+d>=need){const f=(need-acc)/(d||1);lx+=(x-lx)*f;lz+=(z-lz)*f;acc=need;break}acc+=d;lx=x;lz=z}
+ const wantH=Math.atan2(lx-t.x,lz-t.z);t.h+=clamp(angDiff(t.h,wantH),-3.2*dt,3.2*dt);
+ // speed
+ t.railV=t.railV||0;const accel=target>t.railV?4.2:9;t.railV+=clamp(target-t.railV,-accel*dt,accel*dt);if(t.railV<.05&&target<.05)t.railV=0;
+ t.targetSpeed=t.railV;t.steer=0;t.lat=lat}
+const updTrafficTG=updTraffic;
+function tgReset(){TG.nodes=[];TG.edges=[];TG.built=false;for(const t of TRAF){t.path=null;t.hold=null}}
+updTraffic=function(dt){const fo=!!(WORLD.fenceCol&&WORLD.fenceCol.off);if(TG.built&&TG.fo!==fo)tgReset();tgBuild();if(!TG.edges.length)return updTrafficTG(dt);
+ for(const t of TRAF){t.car.g.visible=!trafficUnavailable(t);if(!t.car.g.visible){tgRelease(t);continue}bindVehicle(t,t.car);t.wait=Math.max(0,t.wait-dt);
+  if(t.disabled||t.destroyed||!t.driver?.seated||t.driver.ko){t.rail=false;t.targetSpeed=0;t.steer=0;tgRelease(t);continue}
+  if(!t.path)tgPlace(t,t.x,t.z,t.h);
+  const upright=Math.abs(t.roll||0)<.5&&Math.abs(t.pitch||0)<.5;
+  if(t.aiRecover>0||!upright){t.rail=false;t.targetSpeed=0;t.steer=0;t.railV=Math.hypot(t.vx||0,t.vz||0)*.5;t.lost=(t.lost||0)+dt;continue}
+  if(!t.rail){// rejoin: near a lane → drive back to it; otherwise wait until nobody sees and respawn
+   tgPlace(t,t.x,t.z,t.h);const p=t.path[0],d=p?Math.hypot(p.x-t.x,p.z-t.z):99;
+   if(d>5||!upright){t.rail=false;t.lost=(t.lost||0)+dt;const far=Math.hypot(P.x-t.x,P.z-t.z)>45&&!(MP.on&&mpOthers().some(o=>o.pres.p&&Math.hypot(o.pres.p[0]-t.x,o.pres.p[1]-t.z)<45));
+    if(far&&t.lost>4){const s=TG.edges[Math.floor(Math.random()*TG.edges.length)],m={x:(s[0].x+s[1].x)/2,z:(s[0].z+s[1].z)/2};if(Math.hypot(P.x-m.x,P.z-m.z)>60&&!vehicleBodies().some(b=>b!==t&&Math.hypot(b.x-m.x,b.z-m.z)<12)){tgPlace(t,(s[0].x+s[1].x)/2,(s[0].z+s[1].z)/2,null,true);t.lost=0}}
+    t.targetSpeed=0;t.steer=0;continue}
+   t.lost=0}
+  tgDrive(t,dt,tgObstacles(t))}};
+/* on rails: velocity comes from the lane; collisions and walls still apply through the physics step */
+const vehicleControlTG=vehicleControl;
+vehicleControl=function(b,dt){vehicleControlTG(b,dt);if(!b.rail||b.aiRecover>0||b.destroyed||b.disabled||!b.driver?.seated||(inCar&&b===S.car)||mpGuest())return;if(b.y>.05)return;
+ const v=b.targetSpeed||0;b.vx=Math.sin(b.h)*v;b.vz=Math.cos(b.h)*v;b.yawV*=.5};
+/* parked cars standing in a lane are moved to the curb, parallel to the road */
+function tgCurb(b){if(!b||cityRoadHeight(b.x,b.z)===0)return;tgBuild();
+ for(const r of CITYSURFACE.roads){if(b.x<r.x1||b.x>r.x2||b.z<r.z1||b.z>r.z2)continue;const horiz=r.x2-r.x1>=r.z2-r.z1,c=horiz?(r.z1+r.z2)/2:(r.x1+r.x2)/2,off=(horiz?b.z:b.x)-c,side=off>=0?1:-1;
+  // stay out of junctions
+  let along=horiz?b.x:b.z;for(const n of TG.nodes){const nc=horiz?n.x:n.z,other=horiz?n.z:n.x;if(Math.abs(other-c)<1&&Math.abs(along-nc)<TG.JR+3)along=nc+(along>=nc?1:-1)*(TG.JR+3)}
+  if(horiz){b.z=c+side*TG.CURB;b.x=along;b.h=Math.cos(b.h||0)*0+(Math.sin(b.h||0)>=0?Math.PI/2:-Math.PI/2)}else{b.x=c+side*TG.CURB;b.z=along;b.h=Math.cos(b.h||0)>=0?0:Math.PI}
+  b.vx=b.vz=0;return true}}
+if(typeof restoreWorldCars==='function'){const restoreWorldCarsTG=restoreWorldCars;restoreWorldCars=function(){restoreWorldCarsTG();for(const p of WORLD_CARS){if(tgCurb(p.body))syncVehicleMesh(p.body,0)}}}
+
+
+/* ---------- A real 3D pot: thick walls, a hollow inside and soil that fills it ----------
+   The soil is a column that rises from the bottom while you pour, with a loose, lumpy surface.
+   Planting presses a dimple into the surface; covering the seed fills it and leaves a small mound.
+   Water darkens the soil where it lands and the whole surface gets darker the wetter the pot is. */
+const POT3={segs:28};
+POT3.prof=[[0,0],[.2,0],[.215,.012],[.3,.40],[.335,.405],[.355,.43],[.362,.475],[.352,.503],[.328,.512],[.312,.497],[.305,.47],[.25,.075],[.236,.06],[0,.06]];
+POT3.floorY=.06;POT3.rIn=y=>.236+(Math.min(.47,Math.max(.06,y))-.06)/(.47-.06)*(.305-.236);
+POT3.shade=[.9,.85,.95,1,1.04,1.08,1.1,1.08,1.02,.82,.74,.6,.55,.5];
+function potLatheGeo(){if(POT3.geo)return POT3.geo;const pts=POT3.prof.map(([x,y])=>new THREE.Vector2(x,y)),g=new THREE.LatheGeometry(pts,POT3.segs);g.computeVertexNormals();
+ const n=g.attributes.position.count,col=new Float32Array(n*3),np=pts.length;for(let i=0;i<n;i++){const j=i%np,s=Math.pow(POT3.shade[j]||1,2.2);col[i*3]=col[i*3+1]=col[i*3+2]=s}g.setAttribute('color',new THREE.BufferAttribute(col,3));return POT3.geo=g}
+/* unit soil surface: rings × segments with a little lumpy noise */
+function soilTopGeo(seed){const R=7,N=24,pos=[],idx=[],r=srng(seed||7);pos.push(0,0,0);
+ for(let i=1;i<=R;i++){const rr=i/R;for(let j=0;j<N;j++){const a=j/N*Math.PI*2+(i%2)*Math.PI/N;pos.push(Math.cos(a)*rr,(r()-.5)*.012*(i<R?1:.3),Math.sin(a)*rr)}}
+ for(let j=0;j<N;j++)idx.push(0,1+(j+1)%N,1+j);
+ for(let i=1;i<R;i++){const a=1+(i-1)*N,b=1+i*N;for(let j=0;j<N;j++){const j2=(j+1)%N;idx.push(a+j,a+j2,b+j);idx.push(a+j2,b+j2,b+j)}}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(pos.length).fill(1),3));
+ g.userData.base=Float32Array.from(pos);g.userData.wet=new Float32Array(pos.length/3);g.userData.tint=new Float32Array(pos.length/3).map(()=>.92+r()*.16);g.computeVertexNormals();return g}
+const makePotBase=makePot;
+makePot=function(type){const big=type==='kruka2',s=big?1.25:1,g=new THREE.Group();
+ const potM=big?new THREE.MeshStandardMaterial({color:0x2b2d33,roughness:.55,vertexColors:true}):new THREE.MeshStandardMaterial({color:0xc4693f,roughness:.92,vertexColors:true});
+ const p=new THREE.Mesh(potLatheGeo(),potM);p.scale.setScalar(s);p.castShadow=p.receiveShadow=true;g.add(p);
+ if(big)[.16,.3].forEach(y=>{const t=new THREE.Mesh(new THREE.TorusGeometry(.2+.1*(y/.4)+.006,.011,6,POT3.segs),potM);t.rotation.x=Math.PI/2;t.position.y=y*s;t.scale.setScalar(s);g.add(t)});
+ {const fl=new THREE.Mesh(new THREE.CircleGeometry(POT3.rIn(POT3.floorY)+.004,POT3.segs),new THREE.MeshStandardMaterial({color:big?0x1d1f24:0x7a3f25,roughness:.95}));fl.rotation.x=-Math.PI/2;fl.position.y=(POT3.floorY+.001)*s;fl.scale.setScalar(s);g.add(fl)}
+ const sa=new THREE.Mesh(saucerGeo,big?plastM:M(0xa8552e));sa.scale.setScalar(s);sa.receiveShadow=true;g.add(sa);
+ // soil: group origin sits at the soil level; the column reaches down to the inner floor
+ const soil=new THREE.Group();soil.visible=false;soil.position.y=.43*s;g.add(soil);
+ const sideM=new THREE.MeshStandardMaterial({color:0x6b4a32,roughness:.95}),topM=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.95,vertexColors:true});
+ const top=new THREE.Mesh(soilTopGeo(Math.floor(Math.random()*1e6)),topM);top.receiveShadow=true;soil.add(top);
+ const col=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,POT3.segs,1,true),sideM);soil.add(col);
+ soil.userData={top,col,sideM,topM,s,lv:-1,wetK:-1,holeK:-1};
+ const plant=new THREE.Group();plant.position.y=.44*s;g.add(plant);
+ const target=new THREE.Mesh(new THREE.RingGeometry(.05,.08,20),new THREE.MeshBasicMaterial({color:0x6ec6ff,side:THREE.DoubleSide}));target.rotation.x=-Math.PI/2;target.position.y=.46*s;target.visible=false;g.add(target);
+ const hole=new THREE.Mesh(new THREE.CircleGeometry(.05,12),new THREE.MeshBasicMaterial({color:0x1a120a}));hole.rotation.x=-Math.PI/2;hole.position.y=.455*s;hole.visible=false;g.add(hole);
+ const o={g,soil,plant,buds:[],target,hole,builtFor:'',sc:s,soilY:.43*s,pot3:true};potSoilVis(o,{soil:'jord',water:0},0,true);return o};
+/* fill 0..1 → soil level between the inner floor and the normal level */
+function potSetFill(V,f){if(!V||!V.pot3)return;const s=V.sc||1,lo=POT3.floorY*s+.012,hi=V.soilY;V.soil.position.y=lo+(hi-lo)*clamp(f,0,1);V.soilLevel=V.soil.position.y+.02*s}
+/* rebuild the column and surface when the level, wetness or seed hole changes */
+const POT_DRY=new THREE.Color(0x9c8466);
+function potSoilVis(V,p,dt,force){if(!V||!V.pot3||(!V.soil.visible&&!force))return;const u=V.soil.userData,s=V.sc||1,y=V.soil.position.y,surf=y+.02*s;
+ if(Math.abs(u.lv-y)>.002){u.lv=y;const rTop=POT3.rIn(surf/s)*s+.004,rBot=POT3.rIn(POT3.floorY)*s+.004,h=Math.max(.004,surf-POT3.floorY*s);u.col.geometry.dispose();u.col.geometry=new THREE.CylinderGeometry(rTop,rBot,h,POT3.segs,1,true);u.col.position.y=.02*s-h/2;u.top.scale.set(rTop,s,rTop);u.top.position.y=.02*s;u.rTop=rTop}
+ const sk=p.soil||V.pourSoil,soilCol=new THREE.Color(SOILS[sk]?SOILS[sk].col:0x6b4a32),dry=soilCol.clone().lerp(POT_DRY,.22),wetC=soilCol.clone().multiplyScalar(.6);
+ const base=clamp((p.water||0)/100,0,1),g=u.top.geometry,W=g.userData.wet,B=g.userData.base,T=g.userData.tint,pos=g.attributes.position,c=g.attributes.color;
+ // local wet spots slowly even out toward the pot's overall moisture
+ for(let i=0;i<W.length;i++)if(W[i]>base*.85)W[i]=Math.max(base*.85,W[i]-(dt||0)*.004);
+ const holeAmt=V.hole.visible?V.hole.scale.x:0,mound=p.seed&&!V.hole.visible?Math.max(0,1-(p.prog||0)*3)*.014:V.hole.visible?(1-holeAmt)*.014:0,hk=Math.round(holeAmt*50)+'|'+Math.round(mound*1000)+'|'+(V.heap||0).toFixed(2);
+ const wk=Math.round(base*60)+'|'+W.reduce((a,b)=>a+b,0).toFixed(1)+'|'+sk;
+ if(wk!==u.wetK||hk!==u.holeK){u.wetK=wk;const rt=u.rTop||.3;
+  for(let i=0;i<W.length;i++){const bx=B[i*3],bz=B[i*3+2],rr=Math.hypot(bx,bz),d=rr*rt;let yy=B[i*3+1];
+   const hf=holeAmt>0?Math.max(0,1-d/.085)**1.3:0;if(holeAmt>0)yy-=.04/s*holeAmt*hf;yy+=mound/s*Math.max(0,1-d/.07)**2;if(V.heap)yy+=V.heap*.06*Math.max(0,1-rr)**1.6;
+   pos.array[i*3+1]=yy;const w=Math.max(base*.85,W[i]),cc=dry.clone().lerp(wetC,w).multiplyScalar(T[i]*(1-.5*holeAmt*hf)).convertSRGBToLinear();c.array[i*3]=cc.r;c.array[i*3+1]=cc.g;c.array[i*3+2]=cc.b}
+  if(hk!==u.holeK){u.holeK=hk;g.computeVertexNormals();pos.needsUpdate=true}else pos.needsUpdate=true;c.needsUpdate=true;
+  u.sideM.color.copy(dry).lerp(wetC,base*.9);u.topM.roughness=u.sideM.roughness=lerp(.97,.55,base)}
+ V.hole.position.y=surf-.04*holeAmt+.003}
+/* water lands where the spout points: darken the soil there instead of floating decals */
+wetSpot=function(V,c,tip,p){if(!V||!V.pot3){return}const u=V.soil.userData,g=u.top.geometry,W=g.userData.wet,B=g.userData.base,rt=u.rTop||.3;
+ const wp=V.g.worldToLocal(new THREE.Vector3(tip.x,V.soilY,tip.z));for(let i=0;i<W.length;i++){const d=Math.hypot(B[i*3]*rt-wp.x,B[i*3+2]*rt-wp.z);if(d<.075*(V.sc||1))W[i]=Math.min(1,W[i]+.08*(1-d/(.075*(V.sc||1))))}};
+const potVisBase=updateSlotVisuals;let potVisT=performance.now();
+updateSlotVisuals=function(t){potVisBase(t);const now=performance.now(),dt=Math.min(.1,(now-potVisT)/1000);potVisT=now;if(!S)return;
+ const here=insideAny();for(const pid of PROPS){if(pid!==here)continue;for(const p of S.props[pid].objs){if(!isPotType(p.type))continue;const o=VISO[p.uid];if(!o||!o.pot3)continue;
+  if(p.soil&&!(o.focus&&FOCUS&&FOCUS.title==='Häll i jord')){o.soil.visible=true;potSetFill(o,1);o.heap=0}
+  if(o.wet){o.wet.visible=false}
+  potSoilVis(o,p,dt)}}};
+
+
+/* ================= More customers, life in Gropen, weather, fullscreen ================= */
+
+/* ----- 1. Fourteen more customers (Centrum, Höjden/Hamnen and Gropen) ----- */
+(function(){const add=[
+ {n:'Kicki',a:'C',fav:['Kanel','Söt'],std:0,b:1.0,link:[2,8]},
+ {n:'Mohammed',a:'C',fav:['Kaffe','Fokus'],std:1,b:1.2,link:[3,7]},
+ {n:'Agnes',a:'C',fav:['Mint','Fräsch'],std:1,b:1.15,link:[6,20]},
+ {n:'Pelle',a:'C',fav:['Stark','Lakrits'],std:0,b:1.0,link:[5,9]},
+ {n:'Tove',a:'C',fav:['Bär','Tropisk'],std:1,b:1.2,link:[4,8,22]},
+ {n:'Fredrik',a:'H',fav:['Iskall','Fokus'],std:2,b:1.5,link:[11,14]},
+ {n:'Linnea',a:'H',fav:['Fräsch','Bär'],std:2,b:1.55,link:[12,25]},
+ {n:'Bertil',a:'H',fav:['Kanel','Vanilj'],std:1,b:1.35,link:[13]},
+ {n:'Lasse',a:'G',fav:['Kaffe','Stark'],std:0,b:.8,link:[16]},
+ {n:'Ylva',a:'G',fav:['Söt','Vanilj'],std:0,b:.85,link:[17]},
+ {n:'Dragan',a:'G',fav:['Stark','Sprakande'],std:0,b:.9,link:[18]},
+ {n:'Nicke',a:'G',fav:['Pigg','Kaffe'],std:0,b:.8,link:[16,28]},
+ {n:'Tess',a:'G',fav:['Bär','Mint'],std:1,b:.95,link:[19]},
+ {n:'Gunnel',a:'G',fav:['Lakrits','Kanel'],std:0,b:.85,link:[19,29]}];
+ const first=CUST.length;add.forEach(c=>CUST.push(c));
+ for(let i=first;i<CUST.length;i++)CUST[i].link.forEach(j=>{if(CUST[j]&&!CUST[j].link.includes(i))CUST[j].link.push(i)});
+ const r=srng(4242);for(let i=first;i<CUST.length;i++)CUST[i].look={skin:SKINS[Math.floor(r()*SKINS.length)],shirt:SHIRTS[i%SHIRTS.length],pants:PANTS[Math.floor(r()*PANTS.length)],hair:HAIRS[Math.floor(r()*HAIRS.length)],hs:Math.floor(r()*5),hat:r()<.25?SHIRTS[Math.floor(r()*SHIRTS.length)]:null,beard:r()<.2};
+ MGMIN[first+1]=75;MGMIN[first+5]=100;MGMIN[first+6]=100})();
+/* with a bigger customer base, orders come a little more often */
+const genOrderW=genOrder;
+genOrder=function(){genOrderW();if(!S)return;const n=S.cust.filter(c=>c.un&&c.dealer<0).length;if(n>=8&&rand()<Math.min(.45,(n-6)*.04))genOrderW()};
+/* co-op: people who are indoors are sent as a single 0 instead of a full position (keeps the data small) */
+const mpWorldW=mpWorld;
+mpWorld=function(){const w=mpWorldW();const others=mpOthers().map(o=>o.pres&&o.pres.p).filter(Boolean);
+ // indoors → 0; far from every other player → null (they simulate it themselves); otherwise drop trailing zero flags
+ const pack=(arr,list)=>arr.map((x,k)=>{const e=list[k];if(!e||!x)return x;if(e.inside&&!(e.ko||e.koNet))return 0;if(others.length&&!others.some(p=>Math.abs(p[0]-x[0])<90&&Math.abs(p[1]-x[1])<90))return null;const y=x.slice();y[2]=Math.round(y[2]*10)/10;while(y.length>4&&!y[y.length-1])y.pop();return y});if(w.n)w.n=pack(w.n,NPC);if(w.p)w.p=pack(w.p,PEDS);
+ const we=S.weather||{};w.we=[we.rain?1:0,we.from||0,we.to||0,we.k??1,Math.round((we.fog||0)*10),we.ff||0,we.ft||0,Math.round((we.cl||0)*10)];return w};
+const mpNpcW=mpNpc;
+mpNpc=function(n,k,kind,dt){if(MP.on&&!MP.host&&MP.wd&&!npcLocal(n)&&!claimOf(kind,k)&&(MP.wd[kind]||[])[k]===0){if(!n.inside)n.inside=true;n.koNet=false;n.wasNet=true;return true}return mpNpcW(n,k,kind,dt)};
+const mpClockW=mpClock;
+mpClock=function(){mpClockW();const H=mpHostPeer();const we=H&&H.pres.wd&&H.pres.wd.we;if(we&&we.length>3&&S.weather){Object.assign(S.weather,{k:we[3],fog:we[4]/10,ff:we[5],ft:we[6],cl:we[7]/10})}};
+
+/* ----- 2. Uteliggare and life in Gropen ----- */
+const STREET={people:[],props:[]};
+const STREET_LINES=['Har du en tia över?','Kallt i natt. Tunnan är det enda som värmer.','Snuten kör förbi här vid tio varje kväll. Bara så du vet.','Jag hade jobb på hamnen en gång. Innan allt.','Akta dig för Betongen efter mörkret.','Det sägs att någon i Gropen säljer egna dosor nu. Är det du?','Jag sover bättre när det regnar. Då är det tyst.','Ge mig en dosa så berättar jag vem som letar efter sånt där.','Kenta var schyst. Han gav oss alltid lite.','Måsarna tar allt man lämnar.'];
+function streetSpotFree(x,z,r){return !inBld(x,z,.4)&&!COL.some(c=>!c.off&&x>c.x1-r&&x<c.x2+r&&z>c.z1-r&&z<c.z2+r)&&cityRoadHeight(x,z)===0}
+function streetTent(x,z,ry,col){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=ry;scene.add(g);const m=artMat(col,.9);
+ const L=2.1,W=1.5,H=1.05,sh=new THREE.Shape();sh.moveTo(-W/2,0);sh.lineTo(0,H);sh.lineTo(W/2,0);sh.lineTo(-W/2,0);const geo=new THREE.ExtrudeGeometry(sh,{depth:L,bevelEnabled:false});geo.translate(0,0,-L/2);
+ const t=new THREE.Mesh(geo,m);t.castShadow=t.receiveShadow=true;g.add(t);const door=new THREE.Mesh(new THREE.CircleGeometry(.42,3),artMat(0x1a1c20,1));door.position.set(0,.3,L/2+.01);door.rotation.z=Math.PI/2;door.scale.y=1.2;g.add(door);
+ cyl(.015,.015,1.2,5,artMat(0x8a8f96,.5,.5),0,.55,L/2+.06,g,false);addCol(x-1.05,z-1.05,x+1.05,z+1.05);return g}
+function streetMattress(x,z,ry,parent=scene){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=ry;parent.add(g);rbox(.95,.14,1.95,.05,artMat(0xb7ab8e,.95),0,.07,0,g);
+ for(let k=0;k<3;k++){const s=box(.3+Math.random()*.2,.005,.3+Math.random()*.25,artMat(0x8d7c5c,1),(Math.random()-.5)*.5,.142,(Math.random()-.5)*1.4,g,false);s.rotation.y=Math.random()*3}return g}
+function streetBag(x,z,ry,col,parent=scene){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=ry;parent.add(g);rbox(.75,.2,1.75,.09,artMat(col,.85),0,.23,.05,g);rbox(.55,.14,.35,.06,artMat(0xd8d2c4,.9),0,.24,-.82,g);return g}
+function streetCart(x,z,ry){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=ry;scene.add(g);const wire=artMat(0x9aa1ab,.4,.7);
+ for(const [w,h,d,px,py,pz] of[[.9,.02,.6,0,.5,0],[.9,.5,.02,0,.75,.3],[.9,.5,.02,0,.75,-.3],[.02,.5,.6,.45,.75,0],[.02,.5,.6,-.45,.75,0]])box(w,h,d,wire,px,py,pz,g,false);
+ for(const [a,b] of[[-.38,-.25],[.38,-.25],[-.38,.25],[.38,.25]]){cyl(.012,.012,.45,5,wire,a,.27,b,g,false);cyl(.05,.05,.04,8,artMat(0x222222,.9),a,.05,b,g,false)}
+ rbox(.8,.35,.5,.08,artMat(0x3a3f4a,.9),0,.72,0,g);rbox(.4,.25,.35,.05,artMat(0x8a6d4b,.95),.15,.95,.05,g);addCol(x-.55,z-.55,x+.55,z+.55);return g}
+function streetJunk(x,z,R){for(let k=0;k<5;k++){const a=R()*6.28,d=.4+R()*1.6,px=x+Math.cos(a)*d,pz=z+Math.sin(a)*d;const kind=R();
+  if(kind<.35){const s=.22+R()*.18;sph(s,artMat(0x16171a,.6),px,s*.75,pz,scene,1,.8,1.1)}
+  else if(kind<.7){const b=box(.35+R()*.3,.25+R()*.25,.3+R()*.3,artMat(0x9c7a4f,.95),px,.15,pz);b.rotation.y=R()*3}
+  else{const c=cyl(.03,.03,.11,8,artMat([0xb8583d,0x507f78,0xc9ab5a][Math.floor(R()*3)],.5,.3),px,.03,pz,scene,false);c.rotation.z=Math.PI/2;c.rotation.y=R()*3}}}
+function streetSign(x,z,ry,text){poster(x,.42,z,ry,.6,.4,(c,W,H)=>{c.fillStyle='#b8925f';c.fillRect(0,0,W,H);c.fillStyle='#2a2018';c.font=`bold ${Math.floor(H*.3)}px Nunito, sans-serif`;c.textAlign='center';c.textBaseline='middle';c.fillText(text,W/2,H*.5)})}
+/* a person sitting on the ground (legs forward) or lying in a sleeping bag */
+function streetPerson(id,x,z,ry,pose,look){const ch=makeChar(look);ch.g.position.set(x,0,z);ch.g.rotation.order='YXZ';ch.g.rotation.y=ry;scene.add(ch.g);ch.seated=true;ch.body.visible=true;ch.lod.visible=false;if(ch.icon)ch.icon.visible=false;
+ if(pose==='sit'){ch.g.position.y=-.66;box(.7,.012,.9,artMat(0x9c7a4f,.95),x+Math.sin(ry)*.25,.006,z+Math.cos(ry)*.25,scene,false);ch.legL.rotation.x=ch.legR.rotation.x=-1.45;ch.armL.rotation.set(-.55,0,-.12);ch.armR.rotation.set(-.55,0,.12);ch.body.rotation.x=-.12}
+ else{ch.g.rotation.x=-Math.PI/2+.04;ch.g.position.y=.3;ch.legL.rotation.x=ch.legR.rotation.x=0;ch.armL.rotation.set(0,0,-.1);ch.armR.rotation.set(0,0,.1);if(ch.eyes)ch.eyes.scale.y=.15}
+ addCol(x-.35,z-.35,x+.35,z+.35);const p={id,x,z,ch,pose,ph:Math.random()*6};STREET.people.push(p);return p}
+function streetLook(r){return{skin:SKINS[Math.floor(r()*SKINS.length)],shirt:[0x5b5547,0x4a5048,0x6b5a4a,0x3f4652,0x6a4b4b][Math.floor(r()*5)],pants:[0x3a3a34,0x2b2d42,0x4a4036][Math.floor(r()*3)],hair:[0x6b5a48,0x8a8a8a,0x3a2a1e,0xcfcfcf][Math.floor(r()*4)],hs:Math.floor(r()*5),hat:r()<.55?[0x3a3f4a,0x6b3a2a,0x2f4f3a][Math.floor(r()*3)]:null,beard:r()<.65}}
+function buildStreetLife(){const R=srng(777);let id=0;
+ const camp=(x,z,ry,o)=>{if(!streetSpotFree(x,z,.9))return false;
+  if(o.tent)streetTent(x,z,ry,o.tent);
+  if(o.mat){const mx=x+Math.cos(ry)*1.8,mz=z-Math.sin(ry)*1.8;if(streetSpotFree(mx,mz,.6)){streetMattress(mx,mz,ry);if(o.lie){streetPerson('u'+id++,mx+Math.sin(ry)*.9,mz+Math.cos(ry)*.9,ry,'lie',streetLook(R));streetBag(mx,mz,ry,[0x2f4f6a,0x5b2f2f,0x3f5a3a][id%3])}}}
+  if(o.sit){const sx=x-Math.cos(ry)*1.6,sz=z+Math.sin(ry)*1.6;if(streetSpotFree(sx,sz,.4)){streetPerson('u'+id++,sx,sz,ry+Math.PI/2,'sit',streetLook(R));if(o.sign)streetSign(sx+Math.sin(ry+Math.PI/2)*.7,sz+Math.cos(ry+Math.PI/2)*.7,ry+Math.PI/2,o.sign)}}
+  if(o.cart){const cx=x+Math.sin(ry)*1.9,cz=z+Math.cos(ry)*1.9;if(streetSpotFree(cx,cz,.6))streetCart(cx,cz,ry+.6)}
+  if(o.fire){const fx=x+Math.sin(ry)*-2.2,fz=z+Math.cos(ry)*-2.2;if(streetSpotFree(fx,fz,.5)){fireBarrel(fx,fz);HANGOUTS.push({x:fx+1.2,z:fz,n:'Tunnan',a:'G'})}}
+  streetJunk(x,z,R);return true};
+ // Gropen: a tent row on the empty lot, two by the river under the bridges, people around the barrels
+ camp(-127,110,.2,{tent:0x3f5a3a,mat:true,lie:true,cart:true,fire:true});
+ camp(-121,121,-.3,{tent:0x2f4f6a,sit:true,sign:'HJÄLP?'});
+ camp(-129,123,1.4,{tent:0x6a5a3a,cart:true});
+ camp(-46.5,60.5,Math.PI/2,{mat:true,lie:true,cart:true});
+ camp(-46.5,108,Math.PI/2,{sit:true,sign:'TACK',fire:true});
+ camp(-60,145,0,{tent:0x5b2f2f,sit:true});
+ for(const [x,z,ry] of[[-54.6,85.4,-2.2],[-57.4,82.8,.6],[-81.8,139.4,-2.4]])if(streetSpotFree(x,z,.4))streetPerson('u'+id++,x,z,ry,'sit',streetLook(R));
+ // the town side: someone with a cardboard sign on the riverside walk
+ if(streetSpotFree(-10.4,70,.4)){streetPerson('u'+id++,-10.4,70,-Math.PI/2,'sit',streetLook(R));streetSign(-10.4,70.9,-Math.PI/2,'ALLT HJÄLPER')}
+ // litter, trash bags and pigeons all over Gropen
+ for(let k=0;k<40;k++){const x=GROPEN.x1+4+R()*(GROPEN.x2-GROPEN.x1-8),z=GROPEN.z1+4+R()*(GROPEN.z2-GROPEN.z1-8);if(!streetSpotFree(x,z,.3))continue;const kind=R();
+  if(kind<.5){const p=box(.2+R()*.25,.004,.15+R()*.2,artMat([0xe8e2d4,0xc9b98f,0x9aa5b1][Math.floor(R()*3)],1),x,.008,z,scene,false);p.rotation.y=R()*3}
+  else if(kind<.75){const s=.2+R()*.15;sph(s,artMat(0x16171a,.6),x,s*.75,z,scene,1,.8,1.1)}
+  else{const c=cyl(.03,.03,.11,8,artMat(0x8a9a8a,.5,.3),x,.03,z,scene,false);c.rotation.z=Math.PI/2;c.rotation.y=R()*3}}
+ STREET.pigeons=[];const pm=artMat(0x8a8f99,.8);for(let k=0;k<14;k++){const x=-140+R()*90,z=48+R()*104;if(!streetSpotFree(x,z,.2))continue;const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=R()*6;scene.add(g);sph(.07,pm,0,.09,0,g,1,.85,1.4,false);sph(.04,artMat(0x5f6670,.8),0,.17,.08,g,1,1,1,false);box(.012,.012,.03,artMat(0xd08a3a,.8),0,.16,.13,g,false);STREET.pigeons.push({g,x,z,ph:R()*6,fly:0,vx:0,vz:0})}}
+const spawnAllW=spawnAll;
+spawnAll=function(){spawnAllW();try{buildStreetLife()}catch(e){reportErr(e)}};
+function streetTick(dt,t){if(!STREET.people.length)return;const night=hourNow()%24>=21||hourNow()%24<6;
+ for(const p of STREET.people){const d2=(p.x-P.x)**2+(p.z-P.z)**2;if(d2>900)continue;p.ph+=dt;if(p.pose==='sit'){p.ch.head.rotation.x=.25+Math.sin(p.ph*.6)*.08;p.ch.head.rotation.y=Math.sin(p.ph*.23)*.5;p.ch.armR.rotation.x=-.55+Math.max(0,Math.sin(p.ph*.4))*.25}else{p.ch.body.position.y=Math.sin(p.ph*1.2)*.01}}
+ for(const b of STREET.pigeons||[]){const d=Math.hypot(b.x-P.x,b.z-P.z);if(d>40)continue;if(b.fly<=0&&(d<2.6||(inCar&&d<8))){b.fly=2.2;const a=Math.atan2(b.x-P.x,b.z-P.z)+(Math.random()-.5);b.vx=Math.sin(a)*4;b.vz=Math.cos(a)*4;try{samplePlay('click',.05,{x:b.x,z:b.z,range:20})}catch(e){}}
+  if(b.fly>0){b.fly-=dt;b.x+=b.vx*dt;b.z+=b.vz*dt;const y=Math.sin(Math.min(1,(2.2-b.fly)/2.2)*Math.PI)*3.2;b.g.position.set(b.x,y,b.z);b.g.rotation.y=Math.atan2(b.vx,b.vz);b.g.rotation.z=Math.sin(t/40)*.4;if(b.fly<=0){b.g.position.y=0;b.g.rotation.z=0}}
+  else{b.ph+=dt;if(Math.sin(b.ph*2.3)>.97){b.g.rotation.y+=.5}b.g.children[1].position.y=.17-Math.max(0,Math.sin(b.ph*5))*.04}}}
+function streetGive(p){const slot=S.inv.findIndex(x=>x&&x.id.startsWith('P|'));if(slot<0){toast('Du har inga färdiga dosor att ge bort.','bad');return}
+ S.homeless=S.homeless||{};if(S.homeless[p.id]===S.day){dialogLine(p,'Du har redan gett mig en i dag. Tack ska du ha.');return}
+ const x=S.inv[slot];x.n--;if(!x.n)S.inv[slot]=null;S.homeless[p.id]=S.day;renderHotbar();giveXP(4);try{coinBurst(p.x,1,p.z)}catch(e){}
+ const locked=S.cust.map((c,i)=>i).filter(i=>!S.cust[i].un&&CUST[i].a==='G'&&S.cust[i].dealer<0);
+ if(locked.length&&rand()<.5){const j=pick(locked),c=S.cust[j];c.un=true;c.rel=20;c.add=6;dialogLine(p,`Tack, grabben. ${CUST[j].n} frågade efter sånt här i går. Jag skickar hen till dig.`);setTimeout(()=>{if(S)chat(CUST[j].n,'Hej! En kompis vid tunnan sa att du har dosor. Jag vill gärna köpa.')},3500);giveXP(8)}
+ else dialogLine(p,pick(['Tack, det värmer.','Du är en av de goda.','Jag ska komma ihåg det här.']))}
+function dialogLine(p,text){floatText(p.x,1.9,p.z,text.length>34?text.slice(0,32)+'…':text,'#ffe9b0');toast('Uteliggare: '+text)}
+const trafficInteractionsW=trafficInteractions;
+trafficInteractions=function(cand){trafficInteractionsW(cand);if(!S||insideAny())return;for(const p of STREET.people){if(Math.abs(p.x-P.x)>4||Math.abs(p.z-P.z)>4)continue;
+ const hasDose=S.inv.some(x=>x&&x.id.startsWith('P|'));cand(p.x,p.z,1.4,hasDose?'Ge en dosa till uteliggaren':'Prata med uteliggaren',hasDose?()=>streetGive(p):()=>dialogLine(p,pick(STREET_LINES)),.5,null,'ent')}};
+
+/* ----- 3. Weather: drizzle, rain, storms with thunder, morning fog and grey days ----- */
+let fogAmt=0,wxFlash=0,wxThunderT=8,wxCloud=0;
+newWeather=function(){const r=rand();const w={rain:0,from:0,to:0,k:1,fog:0,ff:0,ft:0,cl:0};
+ if(r<.36){w.rain=1;w.from=420+ri(0,700);w.to=w.from+ri(90,360);const k=rand();w.k=k<.35?0:k<.82?1:2}
+ const f=rand();if(f<.28){w.fog=.55+rand()*.4;w.ff=0;w.ft=480+ri(0,150)}else if(f<.35){w.fog=.45+rand()*.3;w.ff=0;w.ft=1440}else if(f<.45){w.fog=.5;w.ff=1140;w.ft=1440}
+ w.cl=w.rain?1:rand()<.4?.6+rand()*.4:rand()*.3;S.weather=w;
+ if(S.day>1){const parts=[];if(w.fog&&w.ff<480)parts.push(w.ft>=1440?'dimma hela dagen':'morgondimma');if(w.rain)parts.push(['duggregn','regn','åska och skyfall'][w.k]+' runt '+hhmm(w.from));if(!parts.length)parts.push(w.cl>.5?'mulet':'uppehåll');setTimeout(()=>{if(S)toast('Väder i dag: '+parts.join(', ')+'.')},2600)}};
+const inWin=(m,a,b)=>a<=b?m>=a&&m<b:m>=a||m<b;
+updWeather=function(dt){const w=S.weather||{};const on=w.rain&&S.min>=w.from&&S.min<w.to,k=w.k??1;
+ rainAmt=lerp(rainAmt,on?[.42,.8,1][k]:0,dt*.25);fogAmt=lerp(fogAmt,w.fog&&inWin(S.min,w.ff||0,w.ft||0)?w.fog:0,dt*.06);wxCloud=lerp(wxCloud,Math.max(w.cl||0,rainAmt),dt*.1);
+ if(!RAIN)buildRain();const ins=insideAny();RAIN.visible=rainAmt>.05&&!ins;RAIN.material.opacity=(k===0?.3:.45)*rainAmt;RAIN.position.set(camera.position.x,camera.position.y-8,camera.position.z);
+ const p=RAIN.geometry.attributes.position,sp=k===2?30:k===0?14:22,len=k===2?.9:k===0?.35:.6,wind=k===2?.35:.05;
+ for(let i=0;i<p.count;i+=2){let y=p.getY(i)-dt*sp;if(y<0)y+=25;p.setY(i,y);p.setY(i+1,y-len);p.setX(i+1,p.getX(i)+wind)}p.needsUpdate=true;
+ WORLD.roadMat.roughness=WORLD.roadMat2.roughness=lerp(.9,.25,Math.min(1,rainAmt*1.2));skyU.cloud.value=Math.max(rainAmt,wxCloud);rainSound(rainAmt*(ins?.3:1)*(k===2?1.4:k===0?.6:1));
+ // thunder: a wxFlash, then the rumble a few seconds later
+ wxFlash=Math.max(0,wxFlash-dt*5);if(on&&k===2&&rainAmt>.6){wxThunderT-=dt;if(wxThunderT<=0){wxThunderT=12+rand()*28;wxFlash=1;const delay=600+rand()*2600;setTimeout(()=>thunder(ins?.5:1),delay)}}}
+function thunder(v){try{if(!AC)return;const s=AC.createBufferSource();s.buffer=noiseBuf();const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=160+rand()*90;const g=AC.createGain(),t=AC.currentTime;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.55*v*SET.vol,t+.08);g.gain.exponentialRampToValueAtTime(.18*v*SET.vol,t+.9);g.gain.exponentialRampToValueAtTime(.0001,t+3.2);s.connect(f).connect(g).connect(AC.destination);s.start(0,rand());s.stop(t+3.3)}catch(e){}}
+const FOG_DAY=new THREE.Color(0xb3b7b4),FOG_NIGHT=new THREE.Color(0x2a3036);
+const lightingW=lighting;
+lighting=function(dt,t){lightingW(dt,t);if(!S||!scene.fog)return;const h=(S.min/60)%24,day=h<5?0:h<7.5?(h-5)/2.5:h<18?1:h<21?1-(h-18)/3:0;
+ if(fogAmt>.01){const fc=FOG_NIGHT.clone().lerp(FOG_DAY,day);scene.fog.color.lerp(fc,fogAmt);scene.fog.near=lerp(scene.fog.near,1.5,fogAmt);scene.fog.far=lerp(scene.fog.far,38,fogAmt);skyU.bot.value.lerp(fc,fogAmt);skyU.top.value.lerp(fc,fogAmt*.8);sun.intensity*=1-.6*fogAmt;
+  if(URBAN.smoke)URBAN.smoke.u.fogRange.value.set(scene.fog.near,scene.fog.far)}
+ if(wxCloud>.3){const g=(wxCloud-.3)*.5;skyU.top.value.lerp(skyU.bot.value,g);sun.intensity*=1-.35*g}
+ if(wxFlash>0){hemi.intensity+=wxFlash*2.2;skyU.top.value.lerp(new THREE.Color(0xdfe6ff),wxFlash*.7);skyU.bot.value.lerp(new THREE.Color(0xdfe6ff),wxFlash*.5)}};
+/* police and witnesses see less in fog and heavy rain */
+const doseMulW=doseMul;
+doseMul=function(k){const v=doseMulW(k);if(k==='sight')return v*(1-.4*fogAmt-.18*rainAmt);return v};
+
+/* ----- 4. Start in fullscreen (the click on the menu counts as permission) ----- */
+const beginFS=begin;
+begin=function(saved){beginFS(saved);try{const inApp=/Electron/i.test(navigator.userAgent);if(!inApp&&SET.fs!==false&&!document.fullscreenElement&&document.fullscreenEnabled&&document.documentElement.requestFullscreen){document.documentElement.requestFullscreen().then(()=>{if(navigator.keyboard&&navigator.keyboard.lock)navigator.keyboard.lock(['KeyW','KeyT','KeyN','KeyR','KeyQ','KeyS','KeyD','KeyF','KeyP','KeyH','KeyJ','KeyL','Tab']).catch(()=>{})}).catch(()=>{})}}catch(e){}};
+const gropenTickW=gropenTick;let streetLastT=0;
+gropenTick=function(t){gropenTickW(t);const dt=streetLastT?Math.min(.1,(t-streetLastT)/1000):0;streetLastT=t;try{streetTick(dt,t)}catch(e){}};
+/* ----- 5. Shops: say what you just bought ----- */
+const buyW=ACT.buy;
+ACT.buy=function(d){const before=invCount(d.id),c0=cash();buyW(d);const got=invCount(d.id)-before;if(got>0)toast(`Köpt: ${d.id==='tool:kanna'?'':got+'× '}${itemName(d.id)} för ${kr(c0-cash())}`,'cash');else if(cash()<PRICE(d.id)*(+d.n||1))toast('Du har inte tillräckligt med kontanter.','bad');else toast('Fickorna är fulla.','bad')};
 
 </script>
 </body></html>
