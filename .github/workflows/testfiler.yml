@@ -1,0 +1,20 @@
+name: Testfiler (three.js lokalt)
+# Lägger three.js r128 och typsnitt på grenen "testfiler" så spelet kan provköras utan internet.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          mkdir -p /tmp/v && cd /tmp/v && npm init -y >/dev/null && npm i three@0.128.0 peerjs@1.5.4 @fontsource/lilita-one @fontsource/nunito
+          mkdir -p $GITHUB_WORKSPACE/out && cd $GITHUB_WORKSPACE/out
+          cp /tmp/v/node_modules/three/build/three.min.js .
+          for f in shaders/CopyShader.js shaders/LuminosityHighPassShader.js postprocessing/EffectComposer.js postprocessing/RenderPass.js postprocessing/ShaderPass.js postprocessing/UnrealBloomPass.js; do cp /tmp/v/node_modules/three/examples/js/$f .; done
+          cp /tmp/v/node_modules/peerjs/dist/peerjs.min.js .
+      - run: |
+          cd out && git init -q && git checkout -q -b testfiler && git add . && git -c user.name=bot -c user.email=bot@example.com commit -qm "testfiler"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" testfiler
